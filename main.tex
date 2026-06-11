@@ -57,7 +57,7 @@
 \newcommand{\Kv}{\mathcal{K}_{v}}              % sessions of user v
 \newcommand{\Tvk}{\mathcal{T}_{v,k}}           % steps of session k of user v
 \newcommand{\dt}{\Delta t}                   % step length (h)
-\newcommand{\evwin}[1]{\mathcal{W}_{#1}}         % DR event window of day #1
+\newcommand{\evwin}[1]{\mathcal{T}^{\text{DR}}}         % DR event window of day #1
 \newcommand{\tarr}{t_{\mathrm{arr}}}
 \newcommand{\tdep}{t_{\mathrm{dep}}}
 \newcommand{\treq}{t_{\mathrm{req}}}
@@ -65,7 +65,6 @@
 \newcommand{\soc}[2]{E_{#1}(#2)}             % SoC of #2 at time #1
 \newcommand{\Ecap}{E_{\mathrm{cap}}}
 \newcommand{\Earr}{E_{\mathrm{arr}}}
-\newcommand{\Ebararr}{\bar{E}_{\mathrm{arr}}}% counterfactual arrival SoC
 \newcommand{\Edep}{E_{\mathrm{dep}}}
 \newcommand{\Ereq}{E_{\mathrm{req}}}
 \newcommand{\Eneg}{E_{\mathrm{neg}}}
@@ -95,7 +94,7 @@
 % --- Demand response
 \newcommand{\FSL}{\mathrm{FSL}}
 \newcommand{\Phist}{P^{\mathrm{hist}}}
-\newcommand{\rinc}{\tilde{r}^{\mathrm{inc}}}
+\newcommand{\winc}{w^{\mathrm{inc}}}            % per-day capacity rate (tariff family w)
 \newcommand{\Kfsl}{K_{\mathrm{FSL}}}
 \newcommand{\vio}[1]{\sigma_{#1}}            % FSL violation slack
 \newcommand{\Cinc}[1]{C_{#1}^{\mathrm{inc}}} % capacity payment
@@ -104,11 +103,9 @@
 \newcommand{\Umu}[1]{U(#1)}                  % marginal utility [CONSENT]
 \newcommand{\gch}[2]{g_{#1}^{#2}}            % energy charged
 \newcommand{\ucost}[2]{\zeta_{#1}^{#2}}      % user daily cost
-\newcommand{\epay}[2]{\pi_{#1}^{#2}}         % event-day payment
 \newcommand{\zund}[2]{z_{#1}^{#2}}           % unmet floor energy
 \newcommand{\qdis}[2]{q_{#1}^{#2}}           % discharged energy
 \newcommand{\act}[1]{A_{#1}}                 % charging action
-\newcommand{\infoDA}[1]{\mathcal{I}_{#1}^{\mathrm{DA}}}
  
 \title{P-CONSENT}
 

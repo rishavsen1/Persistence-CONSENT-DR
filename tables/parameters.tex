@@ -23,7 +23,6 @@ $\evwin{d} \subseteq \Td$ & DR event window (possibly empty) \\
 $\soc{t}{v} \in [0, \Ecap(v)]$ & SoC at time $t$ (kWh) \\
 $\Ecap(v)$ & Battery capacity (kWh) \\
 $\Earr, \Edep$ & Arrival, departure SoC (kWh) \\
-$\Ebararr$ & Counterfactual arrival SoC (no over-charge) \\
 $\Ereq(v,k)$ & Reported required SoC (kWh) \\
 $\Eneg(v,k)$ & Negotiated floor, $\Eneg \le \Ereq$ \\
 $\Eext(v,k)$ & Off-site energy use between sessions (kWh) \\
@@ -47,7 +46,7 @@ $\Kbatt, \Ksoc$ & Degradation, unmet-floor rates \\
 \multicolumn{2}{@{}l}{\textit{Demand response}} \\
 $\FSL_d$ & Pledged firm service level (kW) \\
 $\Phist$ & Program historical baseline (kW) \\
-$\rinc$ & Per-day capacity rate (\$/kW) \\
+$\winc$ & Per-day capacity rate (\$/kW) \\
 $\Kfsl$ & FSL violation penalty rate (\$/kWh) \\
 $\vio{t}$ & FSL violation slack (kW) \\
 $\Cinc{d}, \Cpen{d}$ & Capacity payment; penalty, Eq.~\eqref{eq:dr} \\
@@ -55,14 +54,12 @@ $\lambda$, $\varepsilon$ & Pledge depth; delivery risk level \\
 \midrule
 \multicolumn{2}{@{}l}{\textit{Negotiation, payments, decisions}} \\
 $\theta_v$ & User $v$'s choice [CONSENT] \\
-$\Umu{\theta_v}$ & Marginal utility [CONSENT, Eq.~2] \\
+$\Umu{\theta_v}$ & Marginal contribution of $v$ (flexibility and buffer) \\
 $\alpha \in [0,1]$ & Cost-sharing parameter [CONSENT, Eq.~3] \\
 $\gch{t}{v}$ & Energy charged to $v$ at $t$ (kWh) \\
 $\ucost{k}{v}$ & User cost for session $k$, Eq.~\eqref{eq:usercost} \\
-$\epay{k}{v}$ & Event payment to $v$ in session $k$ \\
 $\zund{k}{v}$, $\qdis{t}{v}$ & Unmet floor energy; discharged energy \\
 $\act{t}$ & Charging action $\{\rate{t}{v}\}$ at step $t$ \\
-$\infoDA{d}$ & Day-ahead information set \\
 $\ohat$, $\rhohat$ & Acceptance, yield estimates \\
 $J$ & Building expected net cost, Eq.~\eqref{eq:J} \\
 \bottomrule
