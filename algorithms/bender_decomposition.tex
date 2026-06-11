@@ -1,0 +1,42 @@
+\begin{algorithm}[t]
+\small
+\caption{Benders Decomposition for Inter-Building Coordination}
+\label{alg:benders}
+
+\KwIn{Building set $\Bset$, wheeling feasible set $\Zset$, tolerance $\varepsilon$}
+\KwOut{Wheeling schedule $z^*$ and local dispatch decisions}
+
+Initialize cut set $\mathcal{K}\leftarrow\emptyset$\;
+Set $UB\leftarrow+\infty$, $LB\leftarrow-\infty$, and $k\leftarrow0$\;
+
+\While{$UB-LB>\varepsilon$}{
+
+Solve the master problem with cuts in $\mathcal{K}$\;
+
+Obtain candidate wheeling schedule $\hat z^{(k)}$ and lower bound $LB$\;
+
+\ForEach{building $b\in\Bset$ \textbf{in parallel}}{
+
+Solve the local subproblem $SP_b(\hat z^{(k)})$\;
+
+Obtain subproblem value $SP_b(\hat z^{(k)})$ and meter-balance duals
+$\mu^{(k)}_{b,t}$\;
+
+Generate the Benders cut~\eqref{eq:bender-cut} and add it to $\mathcal{K}$\;
+}
+
+Update upper bound
+$UB\leftarrow
+\min\{UB,\,
+\sum_{b\in\Bset}SP_b(\hat z^{(k)})
++
+\sum_{b\in\Bset}\sum_{t\in\Tset}
+\pi_t^{\mathrm{wh}}
+\qin{b}{t}^{(k)}\dt
+\}$\; 
+
+Set $k\leftarrow k+1$\;
+}
+
+\Return{$z^*$ and the corresponding local dispatch solutions}\;
+\end{algorithm}

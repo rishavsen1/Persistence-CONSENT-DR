@@ -1,0 +1,138 @@
+\documentclass[10pt]{article}
+\usepackage[letterpaper,top=0.4in,bottom=0.4in,left=0.45in,right=0.45in]{geometry}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,bm}
+\usepackage[T1]{fontenc}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{multicol}
+\setlength{\columnsep}{12pt}
+\setlength{\parskip}{1pt}
+\setlength{\parindent}{0pt}
+\titlespacing\section{0pt}{2pt}{1pt}
+\titlespacing\paragraph{0pt}{1pt}{*1}
+\titleformat{\section}{\normalfont\bfseries\normalsize}{\thesection.}{0.4em}{}
+\titleformat*{\section}{\normalfont\bfseries\normalsize}
+\renewcommand{\baselinestretch}{0.91}
+\setlist{nosep,leftmargin=1.0em,topsep=1pt,partopsep=0pt}
+\pagestyle{empty}
+
+\title{\vspace{-2.8em}\textbf{Transactive Energy Across a Multi-Building Enterprise:
+Coupling Peer-to-Peer Trade with Local V2B Flexibility under a Single
+Demand-Charge Account}\vspace{-0.6em}}
+\author{\small Concept note --- A.\ Dubey \& collaborators, SCOPE Lab, Vanderbilt}
+\date{\vspace{-1.4em}}
+
+\begin{document}
+\maketitle
+\vspace{-1.6em}
+
+\begin{multicols}{2}
+
+\section*{Setting}
+An enterprise (campus, hospital, school district) operates
+$\mathcal{B}\!=\!\{1,\ldots,N\}$ buildings; each has its own DSO meter
+but the bills roll up to one account. Building $i$ has stochastic load
+$L_{i,t}$, PV $G_{i,t}\!\in\![0,\bar{P}_i^{\text{pv}}]$, and a (possibly
+empty) fleet of bidirectional EV chargers serving a persistent employee
+population. Two inter-building exchange modes are available:
+(a)~\textbf{Behind-the-meter} flow $f_{ij,t}\!\ge\!0$ over a private
+wire of capacity $\bar{f}_{ij}$ -- zero fee, only between adjacent
+buildings.
+(b)~\textbf{Synchronous DSO-Wheeled Exchange (SWE)} $w_{ij,t}\!\ge\!0$,
+in which $i$ exports $w_{ij,t}$ at the very instant $j$ imports
+$w_{ij,t}$ -- the DSO is a zero-state reservoir at every step. SWE is
+capped by a contracted $\bar{w}_{ij}$ and incurs a per-kWh wheeling fee
+$\pi^{\text{w}}\!\ll\!\pi^{\text{e}}_t$, far below the marginal
+demand-charge cost; SWE lets \emph{any} pair of buildings trade,
+adjacent or not. Each building's metered draw is
+{\scriptsize\[
+P^{\text{m}}_{i,t}=L_{i,t}-G_{i,t}+P^{\text{ev}}_{i,t}
+-\textstyle\sum_j(f_{ji,t}\!-\!f_{ij,t})-\sum_j(w_{ji,t}\!-\!w_{ij,t}),
+\]}%
+giving per-building bill and aggregate wheeling fee
+{\scriptsize\[
+\mathcal{C}_i\!=\!\textstyle\sum_t\pi^{\text{e}}_t[P^{\text{m}}_{i,t}]_+
+\!-\!\pi^{\text{x}}_t[P^{\text{m}}_{i,t}]_-
+\!+\!\pi^{\text{d}}\max_t[P^{\text{m}}_{i,t}]_+,\;
+\mathcal{C}_w\!=\!\textstyle\sum_{i,j,t}\pi^{\text{w}} w_{ij,t}\Delta t.
+\]}%
+By construction $w_{ij,t}$ cancels at the campus PCC, so SWE is neutral
+to system-wide import but \emph{does} reshape per-meter peaks -- exactly
+the term $\sum_i\pi^{\text{d}}\max_t[P^{\text{m}}_{i,t}]_+$.
+
+\section*{Building-level V2B}
+Each EV $k\!\in\!\mathcal{E}_i$ has $[a_k,d_k]$, directionality $\delta_k$
+(1=bidirectional), power bounds $[\underline{p}_k,\bar{p}_k]$, SoC target
+$\theta_k$. Aggregate V2B flow $P^{\text{ev}}_{i,t}\!=\!\sum_k p_{k,t}$
+with $s_{k,t+1}\!=\!s_{k,t}\!+\!\eta p_{k,t}\Delta t$,
+$s_{k,d_k}\!\ge\!\theta_k$. Single-building variants are solved in
+\cite{sen2025iccps,liu2024reinforcement} (MDP / DDPG-MILP), extended with
+multi-day persistence~\cite{iccps2026_pv2b} and with mechanism design
+that elicits $[a_k,d_k,\theta_k]$~\cite{sen2026negotiations}; the
+simulator is \textsc{Optimus}~\cite{talusan2024smartcomp}.
+
+\section*{Two coupled exchange modes}
+$f$ is free at the margin but spatially limited; SWE $w$ is unlimited in
+reach at fee $\pi^{\text{w}}\!\ll\!\pi^{\text{e}}_t$. SWE is the new
+lever: it converts demand-charge minimisation from a spatially-coupled
+problem (private wires only) into a network-wide one settled by the
+DSO. The auction, safety, and privacy guarantees of
+\cite{eisele2020Safe,laszka2018transax,eisele2020role} extend to both
+$f$ and $w$ books, with $\bar{w}_{ij}$ enforced contractually.
+
+\section*{Joint Optimization Problem}
+With $\bm{x}\!=\!\{p_{k,t},f_{ij,t},w_{ij,t}\}$ solve
+{\scriptsize
+\[
+\min_{\bm{x}} \mathbb{E}\!\Big[\textstyle\sum_i\mathcal{C}_i+\mathcal{C}_w\Big]
++\!\sum_k\lambda_k[\theta_k\!-\!s_{k,d_k}]_+
+\]}%
+s.t.\ the meter equation, $0\!\le\!f_{ij,t}\!\le\!\bar{f}_{ij}$,
+$0\!\le\!w_{ij,t}\!\le\!\bar{w}_{ij}$, the EV reservoir $s_{k,t+1}\!=\!s_{k,t}\!+\!\eta p_{k,t}\Delta t$, $\underline{p}_k\!\le\!p_{k,t}\!\le\!\bar{p}_k$,
+$\delta_k\!=\!0\!\Rightarrow\!p_{k,t}\!\ge\!0$, $s_{k,d_k}\!\ge\!\theta_k\!-\!\xi_k$.
+Four structural facts make this hard:
+(i)~\emph{Time non-separability}: $\max_t(\cdot)$ couples the 30-day
+horizon, producing sparse delayed rewards
+\cite{liu2024reinforcement,iccps2026_pv2b}.
+(ii)~\emph{Building non-separability}: per-building optima do not compose.
+(iii)~\emph{Mode arbitrage}: the optimiser must trade off zero-fee but
+spatially limited $f$ against unlimited-reach but priced $w$.
+(iv)~\emph{Multi-stage stochasticity}: $L,G$, EV arrivals, $\theta_k$
+are revealed online and users may misreport
+flexibility~\cite{sen2026negotiations}.
+
+\section*{Innovation: a three-layer CPS control stack}
+\textbf{L1 -- Per-building online V2B controller.} Reuses the online MDP
+of~\cite{sen2025iccps} / DDPG-MILP of~\cite{liu2024reinforcement}; consumes
+a forecast distribution, respects user contracts elicited via
+CONSENT~\cite{sen2026negotiations}, and exploits driver
+persistence~\cite{iccps2026_pv2b}.\\
+\textbf{L2 -- Two-book inter-building market.} A 15-min continuous double
+auction with \emph{two} order books -- a private-wire book ($f_{ij,t}$,
+zero fee, capacities $\bar{f}_{ij}$) and an SWE book ($w_{ij,t}$, fee
+$\pi^{\text{w}}$, capacities $\bar{w}_{ij}$) -- both built on the safe,
+privacy-preserving forward-trading platform
+\cite{eisele2020Safe,laszka2018transax}. Buildings post \emph{flexibility
+menus} (price$\times$quantity$\times$window); a campus matcher solves a
+MILP that minimises forecasted $\sum_i\mathcal{C}_i+\mathcal{C}_w$, prefers
+$f$ where feasible, and uses $w$ for non-adjacent rebalancing.\\
+\textbf{L3 -- Per-meter peak co-state.} For each building $i$ a shadow
+price $\mu_{i,t}\!=\!\partial\mathcal{C}_i/\partial P^{\text{m}}_{i,t}$
+is broadcast to L1/L2 every step. This converts the per-meter demand
+charge into a local marginal signal so per-building L1 controllers run
+independently while the L2 SWE book reconciles them globally -- a
+Benders-style decomposition that preserves optimality.
+
+\paragraph{Why it matters.} A 200~kW demand-charge cut at \$18/kW saves
+$\sim$\$43k/yr per campus pre-energy. The new question unlocked by SWE:
+what fraction of that saving requires wheeling, and what optimal
+$\pi^{\text{w}}$ keeps the DSO revenue-neutral? An empirical study on
+\textsc{Optimus}~\cite{talusan2024smartcomp,sen2025iccps,iccps2026_pv2b,liu2024reinforcement}
+will quantify the coupled value of V2B\,+\,private-wire P2P\,+\,SWE.
+
+{\scriptsize\bibliographystyle{abbrvnat}\bibliography{references}}
+\end{multicols}
+\end{document}

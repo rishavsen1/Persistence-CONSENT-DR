@@ -1,0 +1,219 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{AAAI Paper Timeline and Research Plan}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{AAAI Paper Timeline and Milestones}
+
+\begin{longtable}{p{1.8cm} p{2.3cm} p{10.5cm}}
+\toprule
+\textbf{Week} & \textbf{Date} & \textbf{Goals and Milestones} \\
+\midrule
+\endhead
+
+\textbf{Week 1} & 5/23 -- 5/29 &
+\textbf{[Foundation + Method Lock]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Finalize core method formulation
+    \item Complete problem formulation (including MPC + learned interaction signal $r_i$)
+     \item Draft experiment design document
+    \item Define core hypotheses and evaluation metrics
+\end{itemize}
+
+\textbf{Milestone:}
+A complete 5-page design document with method framing, experiment plan, and hypothesis checklist.
+\\
+
+\midrule
+
+\textbf{Week 2} & 5/30 -- 6/5 &
+\textbf{[Implementation Sprint I]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Build simulator/data pipeline
+    \item Implement Baseline 1: Pure MPC
+    \item Implement Baseline 2: ADMM / distributed optimization baseline
+    \item Validate optimization behavior and constraint handling
+\end{itemize}
+
+\textbf{Milestone:}
+Baselines produce initial quantitative results.
+\\
+
+\midrule
+
+\textbf{Week 3} & 6/6 -- 6/12 &
+\textbf{[Implementation Sprint II]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Build $r_i$ training pipeline
+    \item Train first version of learned interaction representation
+    \item Integrate MPC + $r_i$
+    \item Verify end-to-end coordination behavior
+\end{itemize}
+
+\textbf{Milestone:}
+Full pipeline runs end-to-end (regardless of performance quality).
+\\
+
+\midrule
+
+\textbf{Week 4} & 6/13 -- 6/19 &
+\textbf{[Main Results + Pivot Window]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Run full experiments for proposed method and baselines
+    \item Analyze coordination behavior and scalability
+    \item Evaluate whether the current framing and formulation are sufficiently strong
+    \item Pivot if necessary (simplify framing, modify objectives, or re-focus contribution)
+\end{itemize}
+
+\textbf{Milestone:}
+First version of the main results table.
+\\
+
+\midrule
+
+\textbf{Week 5} & 6/20 -- 6/26 &
+\textbf{[Ablations + Writing Begins]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Ablation: local-only context vs market-aware coordination
+    \item Ablation: different $\lambda$ values
+    \item Ablation: learned $r_i$ vs random/zero representation
+    \item Begin writing introduction and method sections
+\end{itemize}
+
+\textbf{Milestone:}
+Ablation studies completed and paper draft reaches roughly 30\%.
+\\
+
+\midrule
+
+\textbf{Week 6} & 6/27 -- 7/3 &
+\textbf{[Scalability + Plug-and-Play Evaluation]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Evaluate add/remove building scenarios
+    \item Study scalability under varying building counts
+    \item Evaluate modularity and plug-and-play coordination behavior
+    \item Write experiment section
+\end{itemize}
+
+\textbf{Milestone:}
+Paper draft reaches roughly 60\%.
+\\
+
+\midrule
+
+\textbf{Week 7} & 7/4 -- 7/10 &
+\textbf{[Full Draft]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Complete full draft
+    \item Finalize all figures and visualizations
+    \item Send draft to advisor/collaborators for review
+\end{itemize}
+
+\textbf{Milestone:}
+Complete full draft v1.
+\\
+
+\midrule
+
+\textbf{Week 8} & 7/11 -- 7/17 &
+\textbf{[Major Revision]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Address reviewer/advisor feedback
+    \item Run missing experiments
+    \item Finalize references and formatting
+\end{itemize}
+
+\textbf{Milestone:}
+Complete full draft v2.
+\\
+
+\midrule
+
+\textbf{Week 9} & 7/18 -- 7/21 &
+\textbf{[Abstract Submission]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Submit AAAI abstract before UTC-12 deadline
+    \item Double-check formatting, author information, and metadata
+\end{itemize}
+
+\textbf{Milestone:}
+Abstract successfully submitted.
+\\
+
+\midrule
+
+\textbf{Week 9.5} & 7/22 -- 7/28 &
+\textbf{[Final Polish]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Final language polishing
+    \item Verify equations, numbering, and references
+    \item Freeze final version at least 48 hours before deadline
+\end{itemize}
+
+\textbf{Milestone:}
+Final AAAI paper submitted.
+\\
+
+\midrule
+
+\textbf{Week 10} & 7/29 -- 7/31 &
+\textbf{[Supplementary Material]}
+\begin{itemize}[leftmargin=1.5em]
+    \item Prepare supplementary material
+    \item Clean and organize code for reproducibility
+    \item Submit supplementary files and code package
+\end{itemize}
+
+\textbf{Milestone:}
+Supplementary material and reproducibility package submitted.
+\\
+
+\bottomrule
+\end{longtable}
+
+
+\section*{Core Research Hypotheses}
+
+\begin{itemize}[leftmargin=1.5em]
+
+    \item Local-only decentralized control is insufficient under coupled infrastructure dynamics.
+
+    \item Market-aware coordination improves global efficiency and reduces peak demand.
+
+    \item Learned interaction representations $r_i$ capture latent inter-building dependencies.
+
+    \item The proposed framework generalizes under changing building populations (plug-and-play setting).
+
+    \item The decentralized architecture scales more effectively than centralized MPC approaches.
+
+\end{itemize}
+
+
+\section*{Main Narrative Direction}
+
+\begin{itemize}[leftmargin=1.5em]
+
+    \item Scalable decentralized coordination under coupled infrastructure systems
+
+    \item Learning-based interaction representation for distributed MPC
+
+    \item Plug-and-play generalization under dynamic agent populations
+
+    \item Coordination under non-stationary multi-building dynamics
+
+\end{itemize}
+
+\end{document}

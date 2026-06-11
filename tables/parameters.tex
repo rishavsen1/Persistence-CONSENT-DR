@@ -1,0 +1,70 @@
+\begin{table}[t]
+\centering
+\caption{Notation.}
+\label{tab:notation}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Description \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Sets, indices, time}} \\
+$d \in \Dset$ & Day in the billing cycle \\
+$t \in \Td$, $\Tset$ & Time step within day $d$; all steps \\
+$\dt$ & Step length (h) \\
+$v \in \Vset$ & Persistent EV user \\
+$k \in \Kv$ & Session index of user $v$ \\
+$\Tvk$ & Steps of session $k$ of user $v$ \\
+$\Vd{d}$ & Users with a session active on day $d$ \\
+$\tarr(v,k), \tdep(v,k)$ & Session start and end \\
+$\treq(v,k)$ & Requested departure time \\
+$\evwin{d} \subseteq \Td$ & DR event window (possibly empty) \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{EVs, SoC, persistence}} \\
+$\soc{t}{v} \in [0, \Ecap(v)]$ & SoC at time $t$ (kWh) \\
+$\Ecap(v)$ & Battery capacity (kWh) \\
+$\Earr, \Edep$ & Arrival, departure SoC (kWh) \\
+$\Ebararr$ & Counterfactual arrival SoC (no over-charge) \\
+$\Ereq(v,k)$ & Reported required SoC (kWh) \\
+$\Eneg(v,k)$ & Negotiated floor, $\Eneg \le \Ereq$ \\
+$\Eext(v,k)$ & Off-site energy use between sessions (kWh) \\
+$\banked{v}{k}$ & Banked excess at departure (kWh), Eq.~\eqref{eq:banked} \\
+$\survived{v}{k}$ & Survived excess at arrival (kWh), Eq.~\eqref{eq:survived} \\
+$\yieldf{v}{k}$ & Per-user yield $S/X$ \\
+$\accept{v}{k} \in \{0,1\}$ & Over-charge acceptance \\
+$\buff{d}$, $\buffhat{d}$ & Realizable buffer; its forecast (kWh) \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Chargers, load, tariffs}} \\
+$\Nc$, $\zeta(v)$ & Number of chargers; charger assigned to $v$ \\
+$\rmin{\zeta}, \rmax{\zeta}$ & Charger rate limits (kW) \\
+$\rate{t}{v}$ & Charging rate (kW; $<0$ discharge) \\
+$\avail{t}{v} \in \{0,1\}$ & Availability indicator \\
+$\eta$ & Charging/discharging efficiency \\
+$\bload{t}$, $\Ptot{t}$ & Non-EV load; total power draw (kW) \\
+$\we{t}$, $\wdr{}$ & Energy price (\$/kWh); demand rate (\$/kW) \\
+$\ecost{t}$, $\dcost$ & Energy cost; demand charge, Eq.~\eqref{eq:bill} \\
+$\Kbatt, \Ksoc$ & Degradation, unmet-floor rates \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Demand response}} \\
+$\FSL_d$ & Pledged firm service level (kW) \\
+$\Phist$ & Program historical baseline (kW) \\
+$\rinc$ & Per-day capacity rate (\$/kW) \\
+$\Kfsl$ & FSL violation penalty rate (\$/kWh) \\
+$\vio{t}$ & FSL violation slack (kW) \\
+$\Cinc{d}, \Cpen{d}$ & Capacity payment; penalty, Eq.~\eqref{eq:dr} \\
+$\lambda$, $\varepsilon$ & Pledge depth; delivery risk level \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Negotiation, payments, decisions}} \\
+$\theta_v$ & User $v$'s choice [CONSENT] \\
+$\Umu{\theta_v}$ & Marginal utility [CONSENT, Eq.~2] \\
+$\alpha \in [0,1]$ & Cost-sharing parameter [CONSENT, Eq.~3] \\
+$\gch{t}{v}$ & Energy charged to $v$ at $t$ (kWh) \\
+$\ucost{k}{v}$ & User cost for session $k$, Eq.~\eqref{eq:usercost} \\
+$\epay{k}{v}$ & Event payment to $v$ in session $k$ \\
+$\zund{k}{v}$, $\qdis{t}{v}$ & Unmet floor energy; discharged energy \\
+$\act{t}$ & Charging action $\{\rate{t}{v}\}$ at step $t$ \\
+$\infoDA{d}$ & Day-ahead information set \\
+$\ohat$, $\rhohat$ & Acceptance, yield estimates \\
+$J$ & Building expected net cost, Eq.~\eqref{eq:J} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,130 @@
+\documentclass[letterpaper]{article}
+
+\usepackage{aaai}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\frenchspacing
+
+\usepackage{amsmath, amssymb, bm}
+\usepackage{booktabs}
+\usepackage{etoolbox}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e} 
+\usepackage{xcolor}
+\usepackage{comment}
+
+% Do NOT use geometry with aaai two-column style.
+% \usepackage[margin=1in]{geometry}
+
+% Make displayed equations smaller.
+\AtBeginEnvironment{equation}{\small}
+\AtBeginEnvironment{align}{\small}
+\AtBeginEnvironment{align*}{\small}
+
+% Compact displayed equations.
+\setlength{\abovedisplayskip}{4pt}
+\setlength{\belowdisplayskip}{4pt}
+\setlength{\abovedisplayshortskip}{3pt}
+\setlength{\belowdisplayshortskip}{3pt}
+
+% Compact tables.
+\newcommand{\tablesize}{\small}
+
+\pdfinfo{
+/Title (Two-Layer MILP Formulation for Multi-Building Energy Management)
+/Author ()
+}
+
+\setcounter{secnumdepth}{0}
+
+% ===================================================================
+% Notation macros: change once, propagate everywhere.
+% Indexed families take arguments, e.g. \soc{t}{v} -> \soc{t}{v}.
+% ===================================================================
+% --- Sets, indices, time
+\newcommand{\Dset}{\mathcal{D}}              % days in billing cycle
+\newcommand{\Tset}{\mathcal{T}}              % all time steps
+\newcommand{\Td}{\mathcal{T}_{d}}              % steps of day d
+\newcommand{\Tdv}{\mathcal{T}_{d}^{v}}           % steps of v's session on day d
+\newcommand{\Vset}{\mathcal{V}}              % persistent users
+\newcommand{\Vd}[1]{\mathcal{V}_{#1}}          % users with a session on day #1
+\newcommand{\Kv}{\mathcal{K}_{v}}              % sessions of user v
+\newcommand{\Tvk}{\mathcal{T}_{v,k}}           % steps of session k of user v
+\newcommand{\dt}{\Delta t}                   % step length (h)
+\newcommand{\evwin}[1]{\mathcal{W}_{#1}}         % DR event window of day #1
+\newcommand{\tarr}{t_{\mathrm{arr}}}
+\newcommand{\tdep}{t_{\mathrm{dep}}}
+\newcommand{\treq}{t_{\mathrm{req}}}
+% --- EVs, SoC, persistence
+\newcommand{\soc}[2]{E_{#1}(#2)}             % SoC of #2 at time #1
+\newcommand{\Ecap}{E_{\mathrm{cap}}}
+\newcommand{\Earr}{E_{\mathrm{arr}}}
+\newcommand{\Ebararr}{\bar{E}_{\mathrm{arr}}}% counterfactual arrival SoC
+\newcommand{\Edep}{E_{\mathrm{dep}}}
+\newcommand{\Ereq}{E_{\mathrm{req}}}
+\newcommand{\Eneg}{E_{\mathrm{neg}}}
+\newcommand{\Eext}{E_{\mathrm{ext}}}        % off-site (external) energy use
+\newcommand{\banked}[2]{X(#1,#2)}            % banked excess at departure
+\newcommand{\survived}[2]{S(#1,#2)}          % survived excess at arrival
+\newcommand{\yieldf}[2]{\rho(#1,#2)}         % per-user yield
+\newcommand{\accept}[2]{o(#1,#2)}            % over-charge acceptance
+\newcommand{\buff}[1]{B_{#1}}                % realizable buffer of day #1
+\newcommand{\buffhat}[1]{\hat{B}_{#1}}       % its day-ahead forecast
+\newcommand{\ohat}{\hat{o}}                  % acceptance estimate
+\newcommand{\rhohat}{\hat{\rho}}             % yield estimate
+% --- Chargers, load, tariffs
+\newcommand{\Nc}{N_{c}}
+\newcommand{\rate}[2]{r_{#1}^{#2}}           % charging rate of #2 at #1
+\newcommand{\rmin}[1]{r_{\min}^{#1}}
+\newcommand{\rmax}[1]{r_{\max}^{#1}}
+\newcommand{\avail}[2]{a_{#1}^{#2}}          % availability indicator
+\newcommand{\Ptot}[1]{P_{#1}}                % total power draw
+\newcommand{\bload}[1]{b_{#1}}               % non-EV building load
+\newcommand{\we}[1]{w_{#1}^{e}}              % TOU energy price
+\newcommand{\wdr}{w^{d}}                      % demand rate
+\newcommand{\ecost}[1]{\varphi_{#1}^{\mathrm{energy}}}
+\newcommand{\dcost}{\Phi^{\mathrm{demand}}}
+\newcommand{\Kbatt}{K_{\mathrm{batt}}}
+\newcommand{\Ksoc}{K_{\mathrm{SOC}}}
+% --- Demand response
+\newcommand{\FSL}{\mathrm{FSL}}
+\newcommand{\Phist}{P^{\mathrm{hist}}}
+\newcommand{\rinc}{\tilde{r}^{\mathrm{inc}}}
+\newcommand{\Kfsl}{K_{\mathrm{FSL}}}
+\newcommand{\vio}[1]{\sigma_{#1}}            % FSL violation slack
+\newcommand{\Cinc}[1]{C_{#1}^{\mathrm{inc}}} % capacity payment
+\newcommand{\Cpen}[1]{C_{#1}^{\mathrm{pen}}} % violation penalty
+% --- Negotiation, payments, decisions
+\newcommand{\Umu}[1]{U(#1)}                  % marginal utility [CONSENT]
+\newcommand{\gch}[2]{g_{#1}^{#2}}            % energy charged
+\newcommand{\ucost}[2]{\zeta_{#1}^{#2}}      % user daily cost
+\newcommand{\epay}[2]{\pi_{#1}^{#2}}         % event-day payment
+\newcommand{\zund}[2]{z_{#1}^{#2}}           % unmet floor energy
+\newcommand{\qdis}[2]{q_{#1}^{#2}}           % discharged energy
+\newcommand{\act}[1]{A_{#1}}                 % charging action
+\newcommand{\infoDA}[1]{\mathcal{I}_{#1}^{\mathrm{DA}}}
+ 
+\title{P-CONSENT: Committing Behind-the-Meter EV Flexibility to Demand
+Response without User-Side Commitment}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+%==============================================================
+% \input{sections/introduction}
+
+% \input{sections/formulation}
+% \input{sections/approach}
+\input{sections/main2}
+
+\bibliographystyle{aaai}
+\bibliography{references} 
+
+\newpage
+\input{appendix}
+
+\end{document}

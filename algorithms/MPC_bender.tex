@@ -1,0 +1,46 @@
+\begin{algorithm}[t]
+\small
+\caption{Receding-Horizon Benders Coordination}
+\label{alg:mpc-benders}
+
+\KwIn{Operating horizon $T$, MPC horizon $H^{\mathrm{mpc}}$, tolerance $\varepsilon$}
+\KwOut{Executed wheeling and DER dispatch trajectory}
+
+Initialize $\tau\leftarrow0$\;
+Initialize $\eSnow{b}{0}=\SOCsZero\Esmax$ and $\rho_b(0)=0$ for all $b\in\Bset$\;
+
+\While{$\tau<T$}{
+
+Set $\Hset_{\tau}=\{\tau,\ldots,\min(\tau+H^{\mathrm{mpc}}-1,T-1)\}$\;
+
+Observe current battery states, EV states, and realized peak floors $\rho_b(\tau)$\;
+
+Obtain forecasts $\hat L_{b,t|\tau}$ and $\hat G_{b,t|\tau}$ for $t\in\Hset_{\tau}$\;
+
+Run Algorithm~\ref{alg:benders} on $\Hset_{\tau}$ using current states and forecasts\;
+
+Obtain planned wheeling schedule $\hat z^*$ and local DER dispatch over $\Hset_{\tau}$\;
+
+Execute only the first-slot decisions at time $\tau$\;
+
+Observe realized load, PV generation, EV updates, and meter power $\pmeterreal{b}{\tau}$\;
+
+Update battery states:
+$\eSnow{b}{\tau+1}
+=\eSnow{b}{\tau}
++\etaSch\pschreal{b}{\tau}\dt
+-\psdisreal{b}{\tau}\dt/\etaSdis$\;
+
+Update realized demand peaks:
+$\rho_b(\tau+1)=
+\max\{\rho_b(\tau),\pmeterreal{b}{\tau}\}$
+for $\tau\in\Tset^d$; otherwise
+$\rho_b(\tau+1)=\rho_b(\tau)$\;
+
+Update EV energy states for connected EVs\;
+
+Set $\tau\leftarrow\tau+1$\;
+}
+
+\Return{Executed wheeling and DER dispatch trajectory}\;
+\end{algorithm}
