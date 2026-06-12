@@ -29,7 +29,7 @@ $\Phist$ & program baseline (kW), fixed at enrollment \\
 $[\Emin(v), \Emax(v)]$ & usable battery window (kWh) \\
 $\rmin{c}$, $\rmax{c}$, $\eta$ & charger rate limits (kW); efficiency \\
 $\alpha \in [0,1]$ & share of $\Uflex$ passed to the user \\
-$\lambda \in [0,1]$, $\varepsilon$ & pledge depth; delivery risk level \\
+$\lambda \in [0,1]$, $\varepsilon$ & commitment depth; delivery risk level \\
 $\Delta e^{\max}_l$, $\Delta t^{\max}_{\mathrm{dep},l}$ & deviation bounds per level \\
 \midrule
 \multicolumn{2}{@{}l}{\textit{Stochastic model $\psi$ (one joint law; all $\mathbb{E}[\cdot]$ over $\psi$)}} \\
@@ -45,7 +45,7 @@ $\theta_v$ & selected option: arrival data, negotiated SoC, time \\
 $\accept{v}{k} \in \{0,1\}$ & over-charge acceptance, $\equiv 1$ in main experiments \\
 \midrule
 \multicolumn{2}{@{}l}{\textit{Decisions $\pi = (\pidr, \pich, \pineg)$}} \\
-$\FSL_d$ & pledged firm service level (kW); sole Layer-1 decision \\
+$\FSL_d$ & committed firm service level (kW); sole Layer-1 decision \\
 option set, over-charge offer & $\{(\Delta e_l, \Delta t_{\mathrm{dep},l}, \zeta_l)\} \cup \{\text{reject}\}$ per arrival \\
 $\Eneg(v,k)$, $\tdep(v,k)$ & negotiated floor and departure, upon user choice \\
 $\act{t} = \{\rate{t}{v}\}$ & charging/discharging rates (kW) \\
@@ -74,7 +74,7 @@ $\Uflex(\theta_v)$ & ex ante flexibility contribution, Eq.~\eqref{eq:uflex} \\
 $\Ubuf(v,k)$ & ex post buffer contribution by replay, Eq.~\eqref{eq:ubuf} \\
 $\ucost{k}{v}$ & user cost, Eq.~\eqref{eq:usercost} \\
 $J$ & building expected net cost, Eq.~\eqref{eq:J} \\
-$\Omeps(\buffhat{d})$ & $\varepsilon$-feasible pledge set, Eq.~\eqref{eq:pledgeset} \\
+$\Omeps(\buffhat{d})$ & $\varepsilon$-feasible commitment set, Eq.~\eqref{eq:pledgeset} \\
 \bottomrule
 \end{tabular}
 \end{table*}

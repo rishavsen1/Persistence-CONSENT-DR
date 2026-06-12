@@ -24,17 +24,17 @@ coupled, since the state of charge (SoC) available on a peak day is
 determined by charging decisions made on preceding days \cite{sen2026negotiations}.
 Moreover, the resource is owned by users who are unwilling to accept
 delivery commitments, penalty exposure, or prepayment schemes settled
-against forecasts of their own behavior. A building that pledges
+against forecasts of their own behavior. A building that commits
 aggressively earns greater capacity revenue but bears the full delivery
-risk; a building that cannot mobilize its EV fleet can pledge only the
+risk; a building that cannot mobilize its EV fleet can commit only the
 reduction achievable through direct service curtailment, which is severely
 limited for mission-critical facilities.
  
 Resolving this asymmetry requires navigating a set of deeply interconnected
 challenges. First, the commitment is made under forecast uncertainty: the
-FSL must be pledged before building loads, EV arrivals, and, critically,
-user cooperation for the day in question are realized, so the pledge
-constitutes a commitment against a forecast distribution rather than a
+FSL must be committed before building loads, EV arrivals, and, critically,
+user cooperation for the day in question are realized, so the commitment
+is made against a forecast distribution rather than a
 realized schedule. Second, the deliverable resource is inter-temporally
 coupled: the energy buffer available for discharge on an event day is the
 residual of over-charging performed on earlier off-peak days, diminished by
@@ -48,7 +48,7 @@ instrument available to the building may condition a user's payment or
 obligation on a prediction of that user's behavior. Fourth, the resulting
 delivery risk is concentrated entirely on the building: if users accept
 less over-charge than forecast, or consume more of the banked energy
-off-site than expected, the realized buffer is thinner than the pledge
+off-site than expected, the realized buffer is thinner than the commitment
 assumed, and the penalty is borne by the operator alone. We treat this risk
 not as an incidental limitation but as a quantity to be explicitly priced
 and hedged.
@@ -72,11 +72,11 @@ from its users.
  
 We close this gap with P-CONSENT, a three-layer architecture with a
 deliberately asymmetric commitment structure. Layer~1, a day-ahead
-optimization between the building and the grid, determines the FSL pledge
-as its sole decision; the commitment and its associated penalty are
+optimization between the building and the grid, determines the committed
+FSL as its sole decision; the commitment and its associated penalty are
 confined to this layer and are borne exclusively by the building. Layer~2,
 a real-time Monte Carlo model predictive controller ,
-delivers against the pledged FSL at minimum cost, re-optimizing as loads
+delivers against the committed FSL at minimum cost, re-optimizing as loads
 and arrivals are realized. Layer~3, a negotiation mechanism \cite{sen2026consent},
 generates daily user options consistent with the previously fixed FSL: on
 off-peak days, the controller over-charges consenting users above their
@@ -87,9 +87,9 @@ the payment. All user-side settlement occurs on realized events only: there
 is no prepayment against forecasts, no user-side commitment, and no
 shortfall penalty. Within each day, information flows unidirectionally,
 from the FSL to the charging controller to the negotiation mechanism; the
-negotiation operates under the pledge and does not determine it. Across
+negotiation operates under the committed FSL and does not determine it. Across
 days, the loop closes: the buffer accumulated on the current day, together
-with the observed acceptance of over-charge offers, informs the pledge for
+with the observed acceptance of over-charge offers, informs the commitment for
 the following day. The persistent buffer thereby expands the FSL that the
 building can safely commit, while the FSL provides the negotiation with a
 concrete daily discharge target and a source of revenue, external to the
@@ -102,11 +102,11 @@ that survives off-site consumption and remains available for discharge,
 multiplied by the fraction of users who accept the over-charge offer. Both
 are behavioral quantities. Our evaluation measures them directly rather
 than assuming favorable values, and we characterize how the safely
-pledgeable FSL, and with it the value of the architecture, contracts as
-these quantities decrease. Because the null pledge remains feasible
+committable FSL, and with it the value of the architecture, contracts as
+these quantities decrease. Because the null commitment remains feasible
 throughout, the system degrades gracefully to its non-committing
 counterpart rather than committing an insufficient buffer to an aggressive
-pledge.
+commitment.
  
 Our contributions are:
 \begin{itemize}
@@ -116,11 +116,11 @@ resource}, with a three-layer decision structure whose within-day
 information flow is unidirectional (from the FSL to the charging controller
 to the negotiation mechanism) and whose cross-day loop closes through the
 persistent SoC buffer (Section~\ref{sec:formulation}).
-\item \textbf{A characterization of the feasible pledge set}, establishing
+\item \textbf{A characterization of the feasible commitment set}, establishing
 that the set of FSLs deliverable at a given risk level grows monotonically
 with the forecast buffer, thereby formalizing the manner in which
 persistence-aware over-charging expands upstream commitment capacity,
-together with a pledge-depth parameter that prices the building's delivery
+together with a commitment-depth parameter that prices the building's delivery
 risk (Section~4).
 \item \textbf{A realized-settlement user mechanism} that extends \cite{sen2026consent}
 with cost-free over-charge offers and event-day discharge payments while
@@ -134,7 +134,7 @@ Valley), measuring the realizable-buffer yield and over-charge acceptance
 directly, and demonstrating that the full architecture weakly dominates
 building-only, negotiation-only, and persistence-only baselines with
 respect to both building and user cost, with sensitivity analyses over the
-cost-sharing parameter $\alpha$ \cite{sen2026consent} and the pledge depth
+cost-sharing parameter $\alpha$ \cite{sen2026consent} and the commitment depth
 (Sections~6 and~7).
 \end{itemize}
  
@@ -153,9 +153,9 @@ We consider a single commercial building that manages its own EV charging
 infrastructure, serves a population of persistent EV users, and
 participates in a utility demand response (DR) program. The system
 performs three processes at three timescales, each governed by its own
-policy: (i) day-ahead, a pledge policy $\pidr$ commits a Firm Service
+policy: (i) day-ahead, a commitment policy $\pidr$ commits a Firm Service
 Level to the utility; (ii) in real time, a charging policy $\pich$
-schedules charging and discharging to deliver against the pledge at
+schedules charging and discharging to deliver against the commitment at
 minimum cost; (iii) at each user arrival, a negotiation policy $\pineg$
 offers compensated adjustments to the user's required SoC and departure
 time, and extends a cost-free over-charge offer when headroom permits. We
@@ -269,9 +269,9 @@ dependence from the notation for readability.
 
 \subsection{Process I: Demand-Response Commitment}\label{sec:dr}
 
-\paragraph{Pledge.} At the end of day $d{-}1$, the pledge policy
+\paragraph{Commitment.} At the end of day $d{-}1$, the commitment policy
 $\pidr$ selects a Firm Service Level $\FSL_d$ (kW); no other decision is
-taken at this layer. The pledge is non-anticipative: it is a function
+taken at this layer. The committed FSL is non-anticipative: it is a function
 only of information available a day ahead, namely $\psihat$ and the
 state carried from prior days, and may not depend on any quantity
 realized during day $d$.
@@ -286,28 +286,29 @@ capacity payment and the violation penalty are
 \end{equation}
 where $\winc$ (\$/kW) is the per-day-normalized capacity rate and
 $\vio{t} = \max(0,\, \Ptot{t} - \FSL_d)$ is the violation slack, defined
-only on $\evwin{d}$. The pledge is the only commitment in the system; no
+only on $\evwin{d}$. The committed FSL is the only commitment in the system; no
 user-facing quantity is subject to commitment, penalty, or prepayment.
 
-\paragraph{Feasible pledge set and pledge depth.} Delivery of a pledge
-is a probabilistic statement under $\psihat$. The $\varepsilon$-feasible
-pledge set is
+\paragraph{Feasible commitment set and commitment depth.} Delivery of a
+committed FSL is a probabilistic statement under $\psihat$. The
+$\varepsilon$-feasible commitment set is
 \begin{equation}\label{eq:pledgeset}
 \Omeps(\buffhat{d}) = \Bigl\{ \FSL :
 \Pr_{\psihat}\bigl(\Ptot{t} \le \FSL,\ \forall t \in \evwin{d}\bigr)
 \ge 1 - \varepsilon \Bigr\},
 \end{equation}
 where the delivery risk level $\varepsilon$ is the operator's tolerance
-for violating the pledge during an event. The building pledges at depth
-$\lambda \in [0,1]$ within this set:
+for violating the committed FSL during an event. The building commits at
+depth $\lambda \in [0,1]$ within this set:
 \begin{equation}\label{eq:pledgedepth}
 \FSL_d(\lambda) \;=\; \Phist - \lambda\,\bigl(\Phist -
 \min \Omeps(\buffhat{d})\bigr),
 \end{equation}
-interpolating between the null pledge $\FSL_d = \Phist$ (zero revenue,
-zero risk) and the deepest pledge feasible at risk level $\varepsilon$.
-The probability in \eqref{eq:pledgeset} is evaluated by sample average
-approximation: candidate pledges are scored by simulating the delivery
+interpolating between the null commitment $\FSL_d = \Phist$ (zero revenue,
+zero risk) and the deepest commitment feasible at risk level
+$\varepsilon$. The probability in \eqref{eq:pledgeset} is evaluated by
+sample average approximation: candidate values are scored by simulating
+the delivery
 of Process~II over scenarios drawn from $\psihat$, not in closed form.
 Because $\varepsilon$ hedges sampled randomness while $\lambda$ hedges
 error in $\psihat$ itself, the pair $(\lambda, \varepsilon)$ is treated
@@ -315,12 +316,12 @@ as a first-class operating parameter and its revenue--penalty trade-off
 is characterized in Section~7.
 
 \begin{remark}[Program stylization]\label{rem:program}
-Deployed programs differ in pledge cadence: the Base Interruptible
+Deployed programs differ in commitment cadence: the Base Interruptible
 Program fixes the FSL at enrollment for a season, whereas capacity
 bidding programs admit nomination with day-ahead and day-of options. We
-model a day-ahead re-pledgeable FSL, corresponding most closely to the
+model a day-ahead re-committable FSL, corresponding most closely to the
 day-ahead capacity-bidding option, and normalize the capacity rate to
-$\winc$ per pledged day. An enrollment-fixed FSL is the constrained
+$\winc$ per committed day. An enrollment-fixed FSL is the constrained
 special case $\FSL_d \equiv \FSL$ and is reported in the sensitivity
 analysis.
 \end{remark}
@@ -336,7 +337,7 @@ the negotiated floor is a guarantee at the negotiated departure:
 \Edep(v,k) \;\ge\; \Eneg(v,k),
 \end{equation}
 where $\Eneg(v,k) \le \Ereq(v,k)$ is set by Process~III. Second, during
-event windows the pledge enters as a soft-capped constraint,
+event windows the committed FSL enters as a soft-capped constraint,
 \begin{equation}\label{eq:fslslack}
 \Ptot{t} \;\le\; \FSL_d + \vio{t}, \qquad t \in \evwin{d},
 \end{equation}
@@ -351,7 +352,7 @@ may charge a consenting user above the negotiated floor, but only into
 available headroom: over-charge is permitted at step $t$ only while
 $\Ptot{t}$ remains below the estimated peak $\Pmaxhat$ (and below the
 event cap when one is active), so that banking energy never creates a
-new peak or a pledge violation. This is the proactive-charging mechanism
+new peak or an FSL violation. This is the proactive-charging mechanism
 of P-V2B, with the FSL acting as an additional cap.
 
 \paragraph{Buffer accounting.} The banked excess at departure from
@@ -419,7 +420,7 @@ compensated agreement.
 \paragraph{Over-charge offer and acceptance.} Independently of the
 chosen level, the user may accept or decline a cost-free over-charge
 above the negotiated floor, recorded by $\accept{v}{k} \in \{0,1\}$; the
-banked energy is framed as a top-up usable before departure and carries
+banked energy is framed as a complimentary buffer usable before departure and carries
 over by \eqref{eq:carryover}. The formulation treats acceptance as
 binary and per-session; the main experiments assume every offer is
 accepted ($\accept{v}{k} \equiv 1$), stated explicitly, with the
@@ -488,7 +489,7 @@ one way:
 \FSL_d \;\longrightarrow\; \text{Process II constraint set}
 \;\longrightarrow\; \text{Process III option generation};
 \end{equation*}
-the negotiation operates under the pledge and does not determine it, and
+the negotiation operates under the committed FSL and does not determine it, and
 we make no claim of within-day bidirectional coupling, which would
 render the formulation circular. Across days, the loop closes through
 the buffer and the forecasts:
@@ -497,14 +498,14 @@ the buffer and the forecasts:
 \;\longrightarrow\; (\buffhat{d+1},\, \ohat,\, \rhohat)
 \;\longrightarrow\; \FSL_{d+1}.
 \end{equation*}
-The persistence buffer expands the feasible pledge set
-\eqref{eq:pledgeset}, formalized in Section~4; the pledge gives the
+The persistence buffer expands the feasible commitment set
+\eqref{eq:pledgeset}, formalized in Section~4; the committed FSL gives the
 negotiation a concrete discharge target and an external revenue source.
-The building can extend a firm upstream guarantee because the pledged
+The building can extend a firm upstream guarantee because the committed
 quantity is selected after observing the buffer its users have already
 voluntarily accumulated.
 
-\paragraph{Delivery risk.} The pledge is committed against $\psihat$. If
+\paragraph{Delivery risk.} The FSL is committed against $\psihat$. If
 realized acceptance or yield falls below forecast, then $\buff{d} <
 \buffhat{d}$ and the building is exposed to $\vio{t} > 0$ during events,
 with the penalty borne entirely by the building and hedged by
@@ -512,7 +513,7 @@ $(\lambda, \varepsilon)$ through \eqref{eq:pledgedepth}.
 
 \paragraph{Solution space.} A feasible solution comprises:
 \begin{itemize}
-\item a non-anticipative pledge sequence $\{\FSL_d\}$;
+\item a non-anticipative commitment sequence $\{\FSL_d\}$;
 \item an assignment $\assign_t$ mapping each arriving EV to a single
 charger for its entire session;
 \item per-step rates $\{\rate{t}{v}\}$ satisfying

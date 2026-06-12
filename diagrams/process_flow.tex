@@ -17,7 +17,7 @@
 ]
 % ===================== STAGES =====================
 \node[stage] (pledge) {%
-{\stitle 1. Commit the daily pledge}\\[2pt]
+{\stitle 1. Commit the daily FSL}\\[2pt]
 A day ahead, the building forecasts how much surviving buffer it will
 have and commits to a peak cap $\FSL_d$ it can defend, earning a capacity
 payment.\\[3pt]
@@ -28,8 +28,8 @@ set $\FSL_d(\lambda)$ \eqref{eq:pledgedepth}; earn $\Cinc{d}$
 \node[stage, right=0.6cm of pledge] (arrive) {%
 {\stitle 2. Negotiate with each driver}\\[2pt]
 On arrival, a driver states their needs. The system offers compensated
-flexibility options consistent with the pledge, and a free top-up if
-there is room.\\[3pt]
+flexibility options consistent with the committed FSL, and a free
+over-charge if there is room.\\[3pt]
 {\seqn observe $\tarr,\Earr$, report $\Ereq,\treq$; price by $\Uflex$
 \eqref{eq:uflex} $\Rightarrow \Eneg,\tdep$; offer $\Rightarrow
 \accept{v}{k}$}};
@@ -46,7 +46,7 @@ new peak.\\[3pt]
 \node[stage, below=1.55cm of control] (event) {%
 {\stitle 4. Deliver during an event}\\[2pt]
 If the grid calls an event, the controller discharges the banked energy
-to hold the load under the pledged cap; any overshoot is penalized.\\[3pt]
+to hold the load under the committed FSL; any overshoot is penalized.\\[3pt]
 {\seqn discharge to $\Emin(v)$, keep $\Edep\!\ge\!\Eneg$ \eqref{eq:floor};
 slack $\vio{t}$ billed via $\Cpen{d}$ \eqref{eq:dr}}};
 
@@ -61,7 +61,7 @@ settle $\ucost{k}{v}$ \eqref{eq:usercost}, $\Ubuf$ by replay
 
 \node[stage, left=0.6cm of depart] (night) {%
 {\stitle 6. Carry over to next visit}\\[2pt]
-Between visits the car is driven, consuming some of the top-up. What
+Between visits the car is driven, consuming some of the over-charge. What
 survives becomes tomorrow's deliverable buffer and sharpens the next
 forecast.\\[3pt]
 {\seqn $\Earr\!=\!\Edep\!-\!\Eext$ \eqref{eq:carryover}; survives
@@ -98,8 +98,8 @@ buffer.};
 \end{tikzpicture}
 \caption{One operating day of P-CONSENT. Each step states what happens in
 words, then the variables it transforms and the governing equation. The
-day proceeds from the day-ahead pledge; the dashed edge is the sole
+day proceeds from the day-ahead commitment; the dashed edge is the sole
 coupling between days, carrying the surviving buffer and updated forecasts
-into tomorrow's pledge.}
+into tomorrow's committed FSL.}
 \label{fig:processflow}
 \end{figure*}
