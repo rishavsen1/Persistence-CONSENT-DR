@@ -4,6 +4,9 @@
 \usepackage{times}
 \usepackage{helvet}
 \usepackage{courier}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{courier}
 \frenchspacing
 
 \usepackage{amsthm}
@@ -11,14 +14,15 @@
 \newtheorem{remark}{Remark}
 \newtheorem{proposition}{Proposition}
 \newtheorem{theorem}{Theorem}
-
+ 
 \usepackage{amsmath, amssymb, bm}
 \usepackage{booktabs}
 \usepackage{etoolbox}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e} 
 \usepackage{xcolor}
 \usepackage{comment}
-
+\usepackage{tikz}
+\usetikzlibrary{positioning, fit, backgrounds}
 % Do NOT use geometry with aaai two-column style.
 % \usepackage[margin=1in]{geometry}
 
@@ -57,17 +61,31 @@
 \newcommand{\Kv}{\mathcal{K}_{v}}              % sessions of user v
 \newcommand{\Tvk}{\mathcal{T}_{v,k}}           % steps of session k of user v
 \newcommand{\dt}{\Delta t}                   % step length (h)
-\newcommand{\evwin}[1]{\mathcal{T}^{\text{DR}}}         % DR event window of day #1
+\newcommand{\evwin}[1]{\mathcal{T}^{\mathrm{DR}}_{#1}}         % DR event window of day #1
 \newcommand{\tarr}{t_{\mathrm{arr}}}
 \newcommand{\tdep}{t_{\mathrm{dep}}}
 \newcommand{\treq}{t_{\mathrm{req}}}
 % --- EVs, SoC, persistence
 \newcommand{\soc}[2]{E_{#1}(#2)}             % SoC of #2 at time #1
-\newcommand{\Ecap}{E_{\mathrm{cap}}}
 \newcommand{\Earr}{E_{\mathrm{arr}}}
 \newcommand{\Edep}{E_{\mathrm{dep}}}
 \newcommand{\Ereq}{E_{\mathrm{req}}}
 \newcommand{\Eneg}{E_{\mathrm{neg}}}
+\newcommand{\Emin}{E_{\mathrm{min}}}
+\newcommand{\Emax}{E_{\mathrm{max}}}
+\newcommand{\wext}{w^{\mathrm{ext}}}          % external charging price
+\newcommand{\Tpeak}{\mathcal{T}^{\mathrm{peak}}}
+\newcommand{\pmax}{p^{\max}}
+\newcommand{\pmaxpast}{p^{\max}_{\mathrm{past}}}
+\newcommand{\assign}{\phi}                    % EV-to-charger assignment map
+\newcommand{\pidr}{\pi^{\mathrm{DR}}}
+\newcommand{\pich}{\pi^{\mathrm{ch}}}
+\newcommand{\pineg}{\pi^{\mathrm{neg}}}
+\newcommand{\Uflex}{U^{\mathrm{flex}}}
+\newcommand{\Ubuf}{U^{\mathrm{buf}}}
+\newcommand{\psihat}{\hat{\psi}}
+\newcommand{\Pmaxhat}{\hat{P}_{\max}}
+\newcommand{\Omeps}{\Omega_{\varepsilon}}
 \newcommand{\Eext}{E_{\mathrm{ext}}}        % off-site (external) energy use
 \newcommand{\banked}[2]{X(#1,#2)}            % banked excess at departure
 \newcommand{\survived}[2]{S(#1,#2)}          % survived excess at arrival
@@ -87,8 +105,6 @@
 \newcommand{\bload}[1]{b_{#1}}               % non-EV building load
 \newcommand{\we}[1]{w_{#1}^{e}}              % TOU energy price
 \newcommand{\wdr}{w^{d}}                      % demand rate
-\newcommand{\ecost}[1]{\varphi_{#1}^{\mathrm{energy}}}
-\newcommand{\dcost}{\Phi^{\mathrm{demand}}}
 \newcommand{\Kbatt}{K_{\mathrm{batt}}}
 \newcommand{\Ksoc}{K_{\mathrm{SOC}}}
 % --- Demand response

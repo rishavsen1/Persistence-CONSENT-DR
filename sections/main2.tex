@@ -146,290 +146,383 @@ mechanisms for intermittent availability). Explicit non-claim on
 payment-mechanism novelty.]}
  
 \section{Problem Formulation}\label{sec:formulation}
- 
+
+\input{diagrams/process_flow}
+
 We consider a single commercial building that manages its own EV charging
 infrastructure, serves a population of persistent EV users, and
-participates in a utility demand response program. The system performs
-three tasks at three timescales: (i) day-ahead, it pledges a Firm Service
-Level to the utility, earning a capacity payment and accepting a penalty
-for violations during events; (ii) in real time, it schedules EV charging
-and discharging to deliver against the pledge at minimum electricity cost;
-(iii) at each user arrival, it negotiates bounded adjustments to the user's
-required SoC and departure time in exchange for compensation, and offers
-cost-free over-charge above the negotiated floor when headroom permits. A
-notation table is provided in Table~\ref{tab:notation}; we adopt the
-conventions of \cite{sen2026negotiations} for physical quantities and of \cite{sen2026consent} for negotiation objects.
- 
+participates in a utility demand response (DR) program. The system
+performs three processes at three timescales, each governed by its own
+policy: (i) day-ahead, a pledge policy $\pidr$ commits a Firm Service
+Level to the utility; (ii) in real time, a charging policy $\pich$
+schedules charging and discharging to deliver against the pledge at
+minimum cost; (iii) at each user arrival, a negotiation policy $\pineg$
+offers compensated adjustments to the user's required SoC and departure
+time, and extends a cost-free over-charge offer when headroom permits. We
+first declare the shared physical layer (Section~\ref{sec:specs}), then
+close each process in turn with its definitions, constraints, and
+objective contribution
+(Sections~\ref{sec:dr}--\ref{sec:negotiation}), and finally assemble the
+coupled objective and information structure
+(Section~\ref{sec:coupled}). The complete variable dependency structure
+is summarized in Table~\ref{tab:vartree}.
+
 \subsection{Specifications}\label{sec:specs}
- 
+
 \paragraph{Time structure.} The billing cycle consists of days $d \in
 \Dset$. Each day is discretized into time steps $t \in \Td$ of length
-$\dt$ (e.g., 15 minutes); $\Tset = \cup_d \Td$. Control decisions are taken
-at the start of each step and held constant for its duration.
- 
+$\dt$ (e.g., 15 minutes), and $\Tset = \cup_d \Td$. The demand charge is
+assessed over designated peak periods $\Tpeak \subseteq \Tset$. Control
+decisions are taken at the start of each step and held constant for its
+duration.
+
 \paragraph{Persistent users and sessions.} Let $\Vset$ be the set of EV
-users, each with a consistent identity across the billing cycle. Following
-\cite{sen2026negotiations}, user $v$'s visits are indexed by sessions $k \in \Kv =
-\{0, \ldots, K_v\}$, where session $k$ spans $[\tarr(v,k), \tdep(v,k)]
-\subseteq \Tset$ and $\Tvk$ denotes its time steps. Sessions need not occur
-on consecutive days; the formulation accommodates arbitrary gaps between
-visits. The SoC of EV $v$ at time $t$ is $\soc{t}{v} \in [0, \Ecap(v)]$,
-expressed directly in energy units (kWh), where $\Ecap(v)$ is the battery
-capacity. Within a session, the SoC evolves as
+users, each with a consistent identity across the billing cycle. User
+$v$'s visits are indexed by sessions $k \in \Kv$, with first session $k =
+0$; session $k$ spans $[\tarr(v,k), \tdep(v,k)] \subseteq \Tset$, and
+$\Tvk$ denotes its time steps. Sessions need not occur on consecutive
+days; the formulation accommodates arbitrary gaps between visits. At
+plug-in, the arrival time $\tarr(v,k)$ and arrival SoC $\Earr(v,k)$ are
+observed, and the user reports a required departure SoC $\Ereq(v,k)$ and
+departure time $\treq(v,k)$. Let $\Vd{d} \subseteq \Vset$ denote the
+users with a session active on day $d$.
+
+\paragraph{Battery state and persistence.} The SoC of EV $v$ at time $t$
+is $\soc{t}{v}$, expressed in energy units (kWh) and bounded by the
+usable battery window:
+\begin{equation}\label{eq:socbounds}
+\Emin(v) \;\le\; \soc{t}{v} \;\le\; \Emax(v).
+\end{equation}
+Within a session, the SoC evolves as
 \begin{equation}\label{eq:soc}
-\soc{t+1}{v} \;=\; \soc{t}{v} + \rate{t}{v} \,\dt,
+\soc{t+1}{v} \;=\; \soc{t}{v} + \rate{t}{v}\,\dt,
 \end{equation}
-where $\rate{t}{v}$ (kW) is the charging rate, negative for discharge. Since at most one session is active at any time, the session index is omitted from per-step quantities. Between sessions $k$ and
-$k+1$, the EV consumes $\Eext(v,k)$ energy off-site (kWh), so that
+where $\rate{t}{v}$ (kW) is the charging rate, negative for discharge;
+since at most one session is active at any time, the session index is
+omitted from per-step quantities. Between sessions $k$ and $k{+}1$, the
+EV consumes $\Eext(v,k)$ energy off-site (kWh), net of any external
+charging, with $\Eext(v,k) \le \Edep(v,k)$, so that
 \begin{equation}\label{eq:carryover}
-\Earr(v, k{+}1) \;=\; \Edep(v, k) - \Eext(v, k),
+\Earr(v,k{+}1) \;=\; \Edep(v,k) - \Eext(v,k),
 \end{equation}
-which is the persistence coupling of \cite{sen2026negotiations}; as in that
-formulation, off-site usage nets out any external charging, and we assume
-$\Eext(v,k) \le \Edep(v,k)$. Session-related quantities (arrival and
-departure times, arrival SoC, off-site usage) are estimated from historical
-data; availability is never elicited directly from users.
- 
-\paragraph{Requested SoC and the negotiated floor.} Upon arrival for
-session $k$, each user reports a required departure SoC $\Ereq(v,k)$ (kWh)
-and a departure time $\treq(v,k)$. Through the negotiation of Layer~3
-(Section~4), the user may accept a revised floor $\Eneg(v,k) \le
-\Ereq(v,k)$ and departure time, in exchange for compensation priced by the
-user's marginal utility. The floor constitutes a
-guarantee:
-\begin{equation}\label{eq:floor}
-\Edep(v,k) \;\ge\; \Eneg(v,k).
-\end{equation}
-The floor may be reduced only through the user's voluntary, compensated
-agreement; it is never relaxed unilaterally.
- 
-\paragraph{Banked excess, survival, and the realizable buffer.} On
-off-peak days, based on building load and estimated peaks realized in the problem, the controller may charge user $v$ above the negotiated floor. The banked excess at departure from session $k$ is
-\begin{equation}\label{eq:banked}
-\banked{v}{k} \;=\; \Edep(v,k) - \Eneg(v,k) \;\ge\; 0
-\quad \text{(kWh)},
-\end{equation}
-which is nonnegative by the floor guarantee \eqref{eq:floor}. Of this
-excess, the portion still present in the battery at the next arrival is the
-survived excess,
-\begin{equation}\label{eq:survived}
-\survived{v}{k{+}1} \;=\; \min\bigl(\banked{v}{k},\;
-\Earr(v,k{+}1)\bigr) \quad \text{(kWh)};
-\end{equation}
-the excess survives in full unless off-site consumption draws the battery
-below the banked amount, in which case only the energy present at arrival
-is attributable to the over-charge. The per-user yield is
-$\yieldf{v}{k{+}1} = \survived{v}{k{+}1}/\banked{v}{k}$ whenever
-$\banked{v}{k} > 0$. Each over-charge offer is accepted or declined, which
-is recorded by $\accept{v}{k} \in \{0,1\}$. Let $\Vd{d} \subseteq \Vset$
-denote the users with a session active on day $d$, and for $v \in \Vd{d}$
-let $k$ denote that session. The realizable buffer available on day $d$ is
-\begin{equation}\label{eq:buffer}
-\buff{d} \;=\; \sum_{v \in \Vd{d}} \accept{v}{k{-}1}\cdot \survived{v}{k}
-\quad \text{(kWh)},
-\end{equation}
-deliverable as power $\eta \buff{d} / (|\evwin{d}|\,\dt)$ over an event
-window $\evwin{d}$, where $\eta$ is the discharge efficiency. The
-population quantities $\mathbb{E}[\rho]$ and $\mathbb{E}[o]$ constitute the
-central empirical question of this paper: their product, scaled by the
-per-kWh value of event-window discharge, bounds the improvement achievable
-by the full architecture relative to its non-committing counterpart. Both
-quantities are estimated online and measured empirically in Section~7;
-neither is assumed.
- 
-\begin{assumption}[Exogenous off-site usage]\label{as:exo}
-$\Eext(v,k)$ is unaffected by the over-charge decision; that is, the
-provision of cost-free energy does not induce additional vehicle usage.
-This is a behavioral assumption subject to a potential rebound effect, and
-we revisit it when interpreting the measured yield (Section~7).
-\end{assumption}
- 
-\paragraph{Chargers and building load.} The building operates $\Nc$
-heterogeneous chargers, bidirectional or unidirectional, with rate limits
-$[\rmin{\zeta(v)}, \rmax{\zeta(v)}]$ for the charger $\zeta(v)$ assigned to $v$ ($\rmin{} < 0$ only for bidirectional chargers). Assignment follows a first-come, first-served rule and remains fixed for the duration of the session. With availability indicator $\avail{t}{v} \in \{0,1\}$, the building's total power draw is
+where $\Edep(v,k)$ is the SoC at departure from session $k$. The arrival
+SoC is therefore exogenous only at $k = 0$; for every later session it is
+determined by \eqref{eq:carryover}, which is precisely what makes the
+fleet an inter-temporally coupled resource and what single-day
+formulations cannot represent.
+
+\paragraph{Chargers and assignment.} The building operates a set
+$\mathcal{C}$ of heterogeneous charger types with $N_c$ units of type
+$c$, rate limits $[\rmin{c}, \rmax{c}]$ ($\rmin{c} < 0$ only for
+bidirectional chargers), and charging/discharging efficiency $\eta$. An
+assignment map $\assign_t : \mathcal{V}_t \leftrightarrow \mathcal{C}_t$
+matches present EVs to chargers one-to-one, first-come, first-served,
+fixed for the duration of the session; an EV that arrives when no charger
+is free cannot participate. The availability indicator is $\avail{t}{v}
+\in \{0,1\}$. Charging-rate slowdown at high SoC is modeled by
+piecewise-linear segments and deferred to the appendix.
+
+\paragraph{Building power and electricity cost.} The building's total
+power draw is
 \begin{equation}\label{eq:load}
-\Ptot{t} \;=\; \bload{t} + \sum_{v \in \Vset} \avail{t}{v}\, \rate{t}{v},
+\Ptot{t} \;=\; \bload{t} + \sum_{v \in \Vset} \avail{t}{v}\,\rate{t}{v},
 \qquad \Ptot{t} \ge 0,
 \end{equation}
-where $\bload{t}$ (kW) is the non-EV building load.
- 
-\paragraph{Electricity bill.} The bill combines time-of-use energy charges
-and a demand charge levied on the monthly peak:
-\begin{equation}\label{eq:bill}
-\ecost{t} = \we{t}\, \Ptot{t}\, \dt, \qquad
-\dcost = \wdr{} \cdot \max_{t \in \Tset} \Ptot{t},
+where $\bload{t}$ (kW) is the non-EV building load. The energy cost at
+step $t$ is $g_t = \we{t}\,\Ptot{t}\,\dt$ with time-of-use price
+$\we{t}$ (\$/kWh), and the energy cost attributed to user $v$ sums the
+energy $\gch{t}{v}$ delivered to their EV ($\gch{t}{v} < 0$ when
+discharging). The demand cost is $\wdr{}\cdot\pmax$, where
+\begin{equation}\label{eq:peak}
+\pmax \;=\; \max\Bigl(\pmaxpast,\; \max_{t \in \Tpeak} \Ptot{t}\Bigr)
 \end{equation}
-with energy price $\we{t}$ (\$/kWh) and demand rate $\wdr{}$ (\$/kW). Discharging incurs a battery degradation cost $\Kbatt$ per kWh discharged, and departure below the negotiated floor incurs a penalty $\Ksoc$ per kWh.
- 
-\paragraph{Demand response program.} The building participates in a
-capacity-paying DR program. For day $d$, it pledges a Firm Service Level
-$\FSL_d$ (kW). The utility may call an event with window $\evwin{d}
-\subseteq \Td$; events are exogenous, sparse, and
-program-dependent. The capacity payment and the violation penalty are
+and $\pmaxpast$ is the running peak realized so far in the billing
+cycle, carried as state because persistent EVs couple consecutive days.
+Discharging accrues a degradation cost $\Kbatt$ per kWh, tracked by
+$\qdis{t}{v} \ge -\rate{t}{v}\dt$, and departing below the negotiated
+floor incurs $\Ksoc$ per kWh of shortfall $\zund{k}{v}$.
+
+\paragraph{Uncertainty model.} All stochasticity is collected in a
+single joint law $\psi$ over: the non-EV load $\{\bload{t}\}$; the
+future-user process (session occurrence and arrival times of
+not-yet-arrived users, their requests, option choices, and over-charge
+acceptances); the off-site usage $\{\Eext(v,k)\}$; and the utility's
+event calls $\{\evwin{d}\}$. Every expectation in this paper is taken
+with respect to $\psi$ unless stated otherwise.
+
+\paragraph{Forecast models.} The controller does not know $\psi$ and
+operates with a learned approximation $\psihat$: a load forecast
+$\hat{b}_t$; a generative user-forecast model producing future arrivals,
+requests, option choices, and over-charge acceptances, whose acceptance
+rate we denote $\ohat$; a yield estimate $\rhohat$ fitted to realized
+survival history; and an event-likelihood model for $\evwin{d}$. Two
+derived forecasts recur: the forecast realizable buffer $\buffhat{d}$
+(Section~\ref{sec:charging}) and the estimated peak $\Pmaxhat$, which
+serves as the headroom boundary for proactive over-charging.
+
+\paragraph{Policies.} The building's policy is the triple $\pi =
+(\pidr, \pich, \pineg)$ with decision epochs at the end of each day, at
+every time step, and at every user arrival, respectively. All derived
+quantities below (SoC trajectories, peaks, costs) are implicitly
+determined by $\pi$ and the realized user choices; we omit this
+dependence from the notation for readability.
+
+\subsection{Process I: Demand-Response Commitment}\label{sec:dr}
+
+\paragraph{Pledge.} At the end of day $d{-}1$, the pledge policy
+$\pidr$ selects a Firm Service Level $\FSL_d$ (kW); no other decision is
+taken at this layer. The pledge is non-anticipative: it is a function
+only of information available a day ahead, namely $\psihat$ and the
+state carried from prior days, and may not depend on any quantity
+realized during day $d$.
+
+\paragraph{Payment and penalty.} The utility registers a baseline
+$\Phist$ (kW) at enrollment from historical billing data and may call an
+event with window $\evwin{d} \subseteq \Td$, possibly empty. The
+capacity payment and the violation penalty are
 \begin{equation}\label{eq:dr}
-\Cinc{d} = \winc \cdot (\Phist - \FSL_d), \qquad
-\Cpen{d} = \Kfsl \sum_{t \in \evwin{d}} \vio{t}\, \dt,
+\Cinc{d} = \winc\,(\Phist - \FSL_d), \qquad
+\Cpen{d} = \Kfsl \sum_{t \in \evwin{d}} \vio{t}\,\dt,
 \end{equation}
-where $\Phist$ is the program's historical baseline, $\winc$ (\$/kW) is the
-per-day-normalized capacity rate, $\vio{t} = \max(0, \Ptot{t} - \FSL_d)$ is
-the violation slack, and $\Kfsl$ (\$/kWh) is the penalty rate. The pledge constitutes the only commitment in the system; no
+where $\winc$ (\$/kW) is the per-day-normalized capacity rate and
+$\vio{t} = \max(0,\, \Ptot{t} - \FSL_d)$ is the violation slack, defined
+only on $\evwin{d}$. The pledge is the only commitment in the system; no
 user-facing quantity is subject to commitment, penalty, or prepayment.
- 
+
+\paragraph{Feasible pledge set and pledge depth.} Delivery of a pledge
+is a probabilistic statement under $\psihat$. The $\varepsilon$-feasible
+pledge set is
+\begin{equation}\label{eq:pledgeset}
+\Omeps(\buffhat{d}) = \Bigl\{ \FSL :
+\Pr_{\psihat}\bigl(\Ptot{t} \le \FSL,\ \forall t \in \evwin{d}\bigr)
+\ge 1 - \varepsilon \Bigr\},
+\end{equation}
+where the delivery risk level $\varepsilon$ is the operator's tolerance
+for violating the pledge during an event. The building pledges at depth
+$\lambda \in [0,1]$ within this set:
+\begin{equation}\label{eq:pledgedepth}
+\FSL_d(\lambda) \;=\; \Phist - \lambda\,\bigl(\Phist -
+\min \Omeps(\buffhat{d})\bigr),
+\end{equation}
+interpolating between the null pledge $\FSL_d = \Phist$ (zero revenue,
+zero risk) and the deepest pledge feasible at risk level $\varepsilon$.
+The probability in \eqref{eq:pledgeset} is evaluated by sample average
+approximation: candidate pledges are scored by simulating the delivery
+of Process~II over scenarios drawn from $\psihat$, not in closed form.
+Because $\varepsilon$ hedges sampled randomness while $\lambda$ hedges
+error in $\psihat$ itself, the pair $(\lambda, \varepsilon)$ is treated
+as a first-class operating parameter and its revenue--penalty trade-off
+is characterized in Section~7.
+
 \begin{remark}[Program stylization]\label{rem:program}
-Deployed programs differ in pledge cadence: the Base Interruptible Program
-fixes the FSL at enrollment for a season, whereas capacity bidding programs
-admit monthly nomination with day-ahead and day-of options. We model a
-day-ahead re-pledgeable FSL, which corresponds most closely to the
-day-ahead capacity-bidding option, and normalize the monthly capacity rate
-to $\winc$ per pledged day. Results under an enrollment-fixed FSL are a
-constrained special case ($\FSL_d \equiv \FSL$ for all $d$) and are
-reported in the sensitivity analysis.
+Deployed programs differ in pledge cadence: the Base Interruptible
+Program fixes the FSL at enrollment for a season, whereas capacity
+bidding programs admit nomination with day-ahead and day-of options. We
+model a day-ahead re-pledgeable FSL, corresponding most closely to the
+day-ahead capacity-bidding option, and normalize the capacity rate to
+$\winc$ per pledged day. An enrollment-fixed FSL is the constrained
+special case $\FSL_d \equiv \FSL$ and is reported in the sensitivity
+analysis.
 \end{remark}
 
-\noindent\textbf{Building's Policies.}  
-Let \(\pi^{neg}\) and \(\pi^{ch}\) denote the negotiation and charging policies, respectively, and define the combined policy as \(\pi = (\pi^{neg}, \pi^{ch})\). The building’s optimal policy \(\pi^* = (\pi^{neg,*}, \pi^{ch,*})\) jointly determines negotiation offers and EV charging schedules to minimize total costs, including operational expenses and user incentives, at each decision point.
+\subsection{Process II: Persistence-Aware Charging}\label{sec:charging}
 
-\noindent\textbf{User's Marginal Utility.}
-$\boldsymbol\theta_v$ denotes user $v$'s arrival and departure choices. Let $\boldsymbol{\theta}_{\setminus v}$ be the realized choices of all users who have arrived prior to $v$. For users arriving after \(v\), let \(\boldsymbol{\hat{\theta}}_{\setminus v}\) be random variables with joint distribution \(\psi\), representing all possible future arrivals along with their associated choices and flexibilities. Instead of point forecasts, the controller samples from \(\psi\) to estimate expected system costs under uncertainty, as \(\psi\) encompasses the stochastic processes of EV arrivals and user decisions (e.g., arrival/departure times and flexibility preferences).
-
-
-Given the optimal policy $\pi^{*}$ (including negotiation and charging decisions), user $v$'s marginal utility is defined as the expectation under $\psi$ of the cost reduction enabled by the user's participation:
-\begin{equation}\label{eq:user_utility}
- % \small
-\begin{split}
-U^{\boldsymbol{\theta}_{\setminus v}, \pi^{*}}(\theta_v) = \mathbb{E}_{\boldsymbol{\hat{\theta}}_{\setminus v} \sim \psi}
-    \Big[
-    J^{\pi^{*}}(\boldsymbol{\theta}_{\setminus v}, \boldsymbol{\hat{\theta}}_{\setminus v} \mid \mathcal{W}')\\
-    - J^{\pi^{*}}(\boldsymbol{\theta}_{\setminus v}, \theta_v, \boldsymbol{\hat{\theta}}_{\setminus v} \mid \mathcal{W}')
-    \Big]
-\end{split}
-\end{equation}  
-where the expectation integrates over all future scenarios varying in arrival numbers, user types, and their flexibility parameters. We assume the quantity \(\mathcal{W}'\) represents building loads, energy charges, and demand charge parameters.
-If \(U(\theta_v) > 0\), then serving user \(v\) is expected to reduce net building costs (e.g., via peak shaving or load shifting); otherwise, if \(U(\theta_v)<0\), the user’s participation is expected to increase costs.
-
-
- 
-\paragraph{User cost and payments.} User $v$'s cost for session $k$
-retains the two-term form of \cite{sen2026consent}:
-\begin{equation}\label{eq:usercost}
-\ucost{k}{v} \;=\; \sum_{t \in \Tvk} \we{t}\, \gch{t}{v} \;-\;
-\alpha \cdot \Umu{\theta_v},
+\paragraph{Action and constraints.} At each step $t$, the charging
+policy $\pich$ selects the rates $\act{t} = \{\rate{t}{v}\}$ subject to
+the SoC bounds \eqref{eq:socbounds}, the dynamics \eqref{eq:soc}, the
+rate limits of the assigned charger, and two service constraints. First,
+the negotiated floor is a guarantee at the negotiated departure:
+\begin{equation}\label{eq:floor}
+\Edep(v,k) \;\ge\; \Eneg(v,k),
 \end{equation}
-where $\gch{t}{v}$ is the energy charged to $v$ (negative for discharge)
-and $\alpha \in [0,1]$ is the cost-sharing parameter. The compensation
-term generalizes CONSENT's marginal utility to the user's marginal
-contribution under the FSL-constrained system: $\Umu{\theta_v}$ comprises
-(i) the expected cost difference attributable to the negotiated
-flexibility \cite{sen2026consent}, evaluated under the constraint set of
-Layer~2, and (ii) for sessions that overlap an event window, the realized
-cost difference attributable to discharging $v$'s surviving buffer,
-evaluated ex post by counterfactual replay of the day with and without
-$\survived{v}{k}$. No separate event-payment term is required: the energy
-credit for discharged quantities is carried by the first term through
-$\gch{t}{v} < 0$, and because the building cost includes the degradation
-term $\Kbatt$, the replay difference is automatically net of battery wear.
-The banked excess itself is provided at no cost: $\banked{v}{k}$ does not
-appear in \eqref{eq:usercost}. Every term is settled on realized
-quantities; no term depends on a forecast of user $v$'s behavior.
- 
-\subsection{Three-Layer Decision Structure}\label{sec:layers}
- 
-The system's decisions partition into three layers with distinct
-timescales, information sets, and owners. A precise statement of the
-information flow constitutes the structural core of the formulation.
- 
-\paragraph{Layer 1 (day-ahead, building--grid).} At the end of day $d-1$,
-the building selects the pledge $\FSL_d$; no other decision is taken at
-this layer. The pledge is a function only of information available a day
-ahead: forecasts of building load, arrivals, and event likelihood, together
-with the forecast realizable buffer $\buffhat{d}$, constructed from
-\eqref{eq:buffer} under the current acceptance and yield estimates
-$(\ohat, \rhohat)$. In particular, $\FSL_d$ may not depend on any quantity
-realized during day $d$. The pledge maximizes expected capacity revenue net
-of expected penalty and delivery cost (Section~4.1). The commitment and its
-penalty are confined to this layer.
- 
-\paragraph{Layer 2 (real-time, building control).} At each step $t$ of day
-$d$, the charging controller selects the rates $\act{t} = \{\rate{t}{v}\}$
-given the system state and the fixed $\FSL_d$. The controller is the
-MC-MPC of \cite{sen2026negotiations}, with the pledge entering as a constraint,
-$\Ptot{t} \le \FSL_d + \vio{t}$ for $t \in \evwin{d}$, penalized at rate
-$\Kfsl$ (Section~4.2). The controller delivers against the pledge but does
-not revise it.
- 
-\paragraph{Layer 3 (per-arrival, user negotiation).} At each user arrival,
-the negotiation mechanism generates flexibility options and prices them by
-marginal utility, with every candidate evaluated under the constraint set
-of Layer~2 and hence under $\FSL_d$ (Section~4.3). On off-peak days, it
-additionally extends the cost-free over-charge offer; on event days, it
-schedules buffer discharge and evaluates the realized component of
-$\Umu{\theta_v}$ by counterfactual replay.
- 
-\paragraph{Information flow.} Within day $d$, the flow is unidirectional:
+where $\Eneg(v,k) \le \Ereq(v,k)$ is set by Process~III. Second, during
+event windows the pledge enters as a soft-capped constraint,
+\begin{equation}\label{eq:fslslack}
+\Ptot{t} \;\le\; \FSL_d + \vio{t}, \qquad t \in \evwin{d},
+\end{equation}
+with slack penalized at $\Kfsl$ through \eqref{eq:dr}. On event days the
+controller may discharge any EV down to $\Emin(v)$, drawing on energy
+above the floor, provided \eqref{eq:floor} is restored by the negotiated
+departure; the floor constrains the departure state, not the
+trajectory.
+
+\paragraph{Over-charging into headroom.} On off-peak days the controller
+may charge a consenting user above the negotiated floor, but only into
+available headroom: over-charge is permitted at step $t$ only while
+$\Ptot{t}$ remains below the estimated peak $\Pmaxhat$ (and below the
+event cap when one is active), so that banking energy never creates a
+new peak or a pledge violation. This is the proactive-charging mechanism
+of P-V2B, with the FSL acting as an additional cap.
+
+\paragraph{Buffer accounting.} The banked excess at departure from
+session $k$ is
+\begin{equation}\label{eq:banked}
+\banked{v}{k} \;=\; \Edep(v,k) - \Eneg(v,k) \;\ge\; 0 \quad \text{(kWh)},
+\end{equation}
+nonnegative by \eqref{eq:floor}. The portion still present at the next
+arrival is the survived excess,
+\begin{equation}\label{eq:survived}
+\survived{v}{k{+}1} \;=\; \min\bigl(\banked{v}{k},\;
+\Earr(v,k{+}1)\bigr) \quad \text{(kWh)}:
+\end{equation}
+the excess survives in full unless off-site consumption draws the
+battery below the banked amount, in which case only the energy present
+at arrival is attributable to the over-charge. The per-user yield is
+$\yieldf{v}{k{+}1} = \survived{v}{k{+}1}/\banked{v}{k}$ whenever
+$\banked{v}{k} > 0$, and the realizable buffer on day $d$ aggregates the
+survived excess of accepted offers,
+\begin{equation}\label{eq:buffer}
+\buff{d} \;=\; \sum_{v \in \Vd{d}} \accept{v}{k{-}1}\cdot
+\survived{v}{k} \quad \text{(kWh)},
+\end{equation}
+where $k$ denotes $v$'s session on day $d$ and $\accept{v}{k{-}1}$ is
+the acceptance indicator of Section~\ref{sec:negotiation}. The
+population averages of yield and acceptance gate the value of the
+architecture: their product, scaled by the per-kWh value of
+event-window discharge, bounds the improvement over the non-committing
+system. Both are measured in Section~7; neither is assumed.
+
+\begin{assumption}[Exogenous off-site usage]\label{as:exo}
+$\Eext(v,k)$ is unaffected by the over-charge decision; cost-free energy
+does not induce additional vehicle usage. This is a behavioral
+assumption subject to a potential rebound effect, revisited when
+interpreting the measured yield (Section~7).
+\end{assumption}
+
+\paragraph{Objective contribution.} Over its horizon, $\pich$ minimizes
+the expected sum of energy cost, the demand-cost increment through
+\eqref{eq:peak}, the floor and degradation penalties, and the FSL
+penalty:
+\begin{equation}\label{eq:chobj}
+\min_{\{\act{t}\}} \;
+\mathbb{E}_{\psihat}\Bigl[\sum_{t} g_t + \wdr{}\,\pmax
++ \Ksoc \sum_{v} \zund{k}{v}
++ \Kbatt \sum_{v,t} \qdis{t}{v}
++ \Kfsl \sum_{t \in \evwin{d}} \vio{t}\,\dt \Bigr]
+\end{equation}
+subject to \eqref{eq:socbounds}--\eqref{eq:fslslack} and the headroom
+rule.
+
+\subsection{Process III: User Negotiation}\label{sec:negotiation}
+
+\paragraph{Choices and options.} User $v$'s choice $\theta_v$ records
+the observed arrival data and the negotiated departure SoC and time.
+Flexibility is parameterized by levels $l \in \{0, \ldots, L\}$ with
+deviation bounds $\Delta e^{\max}_l$ and $\Delta t^{\max}_{\mathrm{dep},l}$;
+level $l = 0$ is the user's exact request. Upon each arrival, $\pineg$
+offers one option per level, each a tuple of SoC deviation, departure
+deviation, and user cost $(\Delta e_l, \Delta t_{\mathrm{dep},l},
+\zeta_l)$, together with a reject-all choice priced at the external rate
+$\wext$. The floor may be reduced only through the user's voluntary,
+compensated agreement.
+
+\paragraph{Over-charge offer and acceptance.} Independently of the
+chosen level, the user may accept or decline a cost-free over-charge
+above the negotiated floor, recorded by $\accept{v}{k} \in \{0,1\}$; the
+banked energy is framed as a top-up usable before departure and carries
+over by \eqref{eq:carryover}. The formulation treats acceptance as
+binary and per-session; the main experiments assume every offer is
+accepted ($\accept{v}{k} \equiv 1$), stated explicitly, with the
+acceptance-rate sensitivity deferred to the behavioral model of
+Section~5.
+
+\paragraph{Marginal contribution.} The compensation rests on two
+components with different settlement times. The flexibility component is
+the ex ante expected reduction in building cost enabled by $v$'s
+negotiated choice, evaluated under the constraint set of Process~II
+(hence under $\FSL_d$):
+\begin{equation}\label{eq:uflex}
+\Uflex(\theta_v) \;=\; \mathbb{E}_{\psihat}\Bigl[
+J_d\bigl(\bm{\theta}_{\setminus v}\bigr) -
+J_d\bigl(\bm{\theta}_{\setminus v}, \theta_v\bigr) \Bigr],
+\end{equation}
+where $J_d(\cdot)$ is the day-$d$ building cost under $\pich$ and
+$\bm{\theta}_{\setminus v}$ collects the realized choices of other users
+and sampled future arrivals. The buffer component settles ex post: on a
+session overlapping an event window, it is the realized cost difference
+obtained by replaying the day with and without $v$'s surviving buffer,
+\begin{equation}\label{eq:ubuf}
+\Ubuf(v,k) \;=\;
+J^{\mathrm{re}}_d\bigl(\buff{d} \setminus \survived{v}{k}\bigr) -
+J^{\mathrm{re}}_d\bigl(\buff{d}\bigr),
+\end{equation}
+and $\Ubuf(v,k) = 0$ on sessions overlapping no event. Because the
+building cost includes the degradation term $\Kbatt$, the replay
+difference is automatically net of battery wear; the user never bears
+wear separately.
+
+\paragraph{User cost.} User $v$'s cost for session $k$ is
+\begin{equation}\label{eq:usercost}
+\ucost{k}{v} \;=\; \sum_{t \in \Tvk} \we{t}\,\gch{t}{v}
+\;-\; \alpha\,\Uflex(\theta_v) \;-\; \Ubuf(v,k),
+\end{equation}
+where $\alpha \in [0,1]$ is the cost-sharing parameter on the
+flexibility component, and the buffer component is paid in full; a share
+parameter on $\Ubuf$ analogous to $\alpha$ is possible but fixed to one
+here. The banked excess itself is provided at no cost: $\banked{v}{k}$
+does not appear in \eqref{eq:usercost}. Every term settles on realized
+quantities; no term depends on a forecast of user $v$'s behavior. The
+behavioral model mapping options to choice and acceptance probabilities
+(user types, inconvenience weights, and satisfaction) is presented in
+Section~5.
+
+\subsection{Coupled Objective and Information Structure}\label{sec:coupled}
+
+\paragraph{Building objective.} The building minimizes its expected net
+cost over the billing cycle:
+\begin{equation}\label{eq:J}
+\begin{aligned}
+J = \mathbb{E}_{\psi}\Bigl[\,
+&\sum_{t \in \Tset} g_t + \wdr{}\,\pmax
+- \sum_{d} \Cinc{d} + \sum_{d} \Cpen{d} \\
+&+ \Ksoc \sum_{v,k} \zund{k}{v}
++ \Kbatt \sum_{v,t} \qdis{t}{v}
++ \sum_{v,k} \bigl(\alpha\,\Uflex(\theta_v) + \Ubuf(v,k)\bigr)
+\Bigr].
+\end{aligned}
+\end{equation}
+
+\paragraph{Information structure.} Within day $d$, information flows
+one way:
 \begin{equation*}
-\FSL_d \;\longrightarrow\; \text{Layer 2 constraint set}
-\;\longrightarrow\; \text{Layer 3 option generation}.
+\FSL_d \;\longrightarrow\; \text{Process II constraint set}
+\;\longrightarrow\; \text{Process III option generation};
 \end{equation*}
-The negotiation operates under the pledge and does not determine it; we
-therefore make no claim of within-day bidirectional coupling, which would
-render the formulation circular. Across days, the loop closes through the
-buffer and the estimators:
+the negotiation operates under the pledge and does not determine it, and
+we make no claim of within-day bidirectional coupling, which would
+render the formulation circular. Across days, the loop closes through
+the buffer and the forecasts:
 \begin{equation*}
 (\text{over-charge},\, o,\, \rho)\ \text{on day } d
 \;\longrightarrow\; (\buffhat{d+1},\, \ohat,\, \rhohat)
 \;\longrightarrow\; \FSL_{d+1}.
 \end{equation*}
-The persistence buffer expands the feasible pledge (formalized as
-Proposition~1, Section~4.4), while the pledge provides the negotiation
-with a concrete discharge target and an external source of revenue. This
-structure, unidirectional within each day and closed across days, is what
-enables the asymmetric commitment: the building can extend a firm upstream
-guarantee because the pledged quantity is selected after observing the
-buffer that its users have already voluntarily accumulated.
- 
-\paragraph{Delivery risk.} The pledge $\FSL_d$ is committed against the
-estimates $(\ohat, \rhohat)$. If realized acceptance or yield falls below
-its forecast, then $\buff{d} < \buffhat{d}$ and the building is exposed to
-$\vio{t} > 0$ during events, with the penalty $\Kfsl$ borne entirely by the
-building. The pledge-depth parameter $\lambda \in [0,1]$ (Section~4.1)
-interpolates between the null pledge $\FSL_d = \Phist$, which carries zero
-revenue and zero risk, and the deepest pledge feasible at risk level
-$\varepsilon$. We treat $(\lambda, \varepsilon)$ as a primary operating
-parameter and characterize its revenue--penalty trade-off in Section~7.
- 
-\subsection{Objectives}\label{sec:objectives}
- 
-\paragraph{Building.} The building minimizes its expected net cost over
-the billing cycle:
-\begin{equation}\label{eq:J}
-\begin{aligned}
-J = \mathbb{E}\Bigl[\,
-&\sum_{t \in \Tset} \ecost{t}
-+ \dcost
-- \sum_{d} \Cinc{d}
-+ \sum_{d} \Cpen{d} \\
-&+ \Ksoc \sum_{v,k} \zund{k}{v}
-+ \Kbatt \sum_{v,t} \qdis{t}{v}
-+ \sum_{v,k} \alpha\, \Umu{\theta_v}
-\Bigr],
-\end{aligned}
-\end{equation}
-where $\zund{k}{v}$ denotes unmet floor energy and $\qdis{t}{v}$ denotes
-discharged energy, mirroring \cite{sen2026consent} augmented with the DR terms
-of \eqref{eq:dr}. The expectation is taken over building load, arrivals,
-events, and user responses.
- 
-\paragraph{Users.} Each user faces the cost \eqref{eq:usercost}. The
-mechanism must preserve voluntary participation and budget feasibility \cite{sen2026consent}, and we require that no payment, obligation, or
-penalty on the user side be conditioned on a forecast: settlement occurs on
-realized events only. Strategy-proofness of flexibility reporting is
-inherited from \cite{sen2026consent} for the negotiation step; Section~4.5
-states the precise conditions under which it extends to the system with
-over-charge, an extension that is not immediate.
- 
-\paragraph{Solution space.} A feasible solution comprises a pledge
-sequence $\{\FSL_d\}$; charger assignments; per-step rates
-$\{\rate{t}{v}\}$ satisfying \eqref{eq:soc}, \eqref{eq:floor},
-\eqref{eq:load}, the charger limits, and the FSL constraint with slack;
-and negotiated agreements $\{\Eneg, \tdep, \zeta^v\}$, jointly
-satisfying the participation and budget guarantees.
+The persistence buffer expands the feasible pledge set
+\eqref{eq:pledgeset}, formalized in Section~4; the pledge gives the
+negotiation a concrete discharge target and an external revenue source.
+The building can extend a firm upstream guarantee because the pledged
+quantity is selected after observing the buffer its users have already
+voluntarily accumulated.
+
+\paragraph{Delivery risk.} The pledge is committed against $\psihat$. If
+realized acceptance or yield falls below forecast, then $\buff{d} <
+\buffhat{d}$ and the building is exposed to $\vio{t} > 0$ during events,
+with the penalty borne entirely by the building and hedged by
+$(\lambda, \varepsilon)$ through \eqref{eq:pledgedepth}.
+
+\paragraph{Solution space.} A feasible solution comprises:
+\begin{itemize}
+\item a non-anticipative pledge sequence $\{\FSL_d\}$;
+\item an assignment $\assign_t$ mapping each arriving EV to a single
+charger for its entire session;
+\item per-step rates $\{\rate{t}{v}\}$ satisfying
+\eqref{eq:socbounds}--\eqref{eq:load}, \eqref{eq:floor},
+\eqref{eq:fslslack}, the charger limits, and the headroom rule;
+\item negotiated agreements: for each session, an offered option set and
+the user's selected $(\Eneg, \tdep, \zeta)$, with deviations within the
+chosen level's bounds;
+\item over-charge acceptances $\{\accept{v}{k}\}$ and the induced buffer
+accounting \eqref{eq:banked}--\eqref{eq:buffer},
+\end{itemize}
+jointly satisfying the participation and budget guarantees inherited
+from the negotiation mechanism (Section~4).

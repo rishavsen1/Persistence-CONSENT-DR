@@ -20,8 +20,7 @@ $\treq(v,k)$ & Requested departure time \\
 $\evwin{d} \subseteq \Td$ & DR event window (possibly empty) \\
 \midrule
 \multicolumn{2}{@{}l}{\textit{EVs, SoC, persistence}} \\
-$\soc{t}{v} \in [0, \Ecap(v)]$ & SoC at time $t$ (kWh) \\
-$\Ecap(v)$ & Battery capacity (kWh) \\
+$\soc{t}{v}  & SoC at time $t$ (kWh) \\
 $\Earr, \Edep$ & Arrival, departure SoC (kWh) \\
 $\Ereq(v,k)$ & Reported required SoC (kWh) \\
 $\Eneg(v,k)$ & Negotiated floor, $\Eneg \le \Ereq$ \\
@@ -40,7 +39,7 @@ $\avail{t}{v} \in \{0,1\}$ & Availability indicator \\
 $\eta$ & Charging/discharging efficiency \\
 $\bload{t}$, $\Ptot{t}$ & Non-EV load; total power draw (kW) \\
 $\we{t}$, $\wdr{}$ & Energy price (\$/kWh); demand rate (\$/kW) \\
-$\ecost{t}$, $\dcost$ & Energy cost; demand charge, Eq.~\eqref{eq:bill} \\
+$\we{t}$, $\wdr$ & Energy cost; demand charge, Eq.~\eqref{eq:bill} \\
 $\Kbatt, \Ksoc$ & Degradation, unmet-floor rates \\
 \midrule
 \multicolumn{2}{@{}l}{\textit{Demand response}} \\

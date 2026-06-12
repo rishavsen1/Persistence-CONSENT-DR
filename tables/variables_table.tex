@@ -1,0 +1,80 @@
+\begin{table*}[t]
+\centering
+\caption{Variable tree. Tags: [P] parameter, [S] stochastic under $\psi$,
+[R] user-reported or behavioral, [D] decision, [X] derived state,
+[E] forecast, [O] objective.}
+\label{tab:vartree}
+\footnotesize
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Description \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Sets and indices}} \\
+$d \in \Dset$ & days of the billing cycle \\
+$t \in \Td$, $\Tset$, $\dt$ & time steps; steps of day $d$; step length (h) \\
+$\Tpeak \subseteq \Tset$ & demand-charge window \\
+$v \in \Vset$ & persistent EV users \\
+$k \in \Kv$ & sessions of user $v$; first session $k = 0$ \\
+$\Tvk$ & steps of session $k$: $[\tarr(v,k), \tdep(v,k)]$ \\
+$\Vd{d} \subseteq \Vset$ & users with a session active on day $d$ \\
+$c \in \mathcal{C}$, $N_c$ & charger types, unit counts \\
+$\evwin{d} \subseteq \Td$ & DR event window, possibly empty \\
+$l \in \{0,\ldots,L\}$ & flexibility levels, with $l = 0$ denoting no deviation \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Tariffs, program, costs, physics}} \\
+$\we{t}$, $\wdr{}$ & energy price (\$/kWh); demand rate (\$/kW) \\
+$\winc$, $\wext$ & per-day capacity rate; external charging price \\
+$\Kfsl$, $\Kbatt$, $\Ksoc$ & FSL violation, degradation, unmet-floor rates (\$/kWh) \\
+$\Phist$ & program baseline (kW), fixed at enrollment \\
+$[\Emin(v), \Emax(v)]$ & usable battery window (kWh) \\
+$\rmin{c}$, $\rmax{c}$, $\eta$ & charger rate limits (kW); efficiency \\
+$\alpha \in [0,1]$ & share of $\Uflex$ passed to the user \\
+$\lambda \in [0,1]$, $\varepsilon$ & pledge depth; delivery risk level \\
+$\Delta e^{\max}_l$, $\Delta t^{\max}_{\mathrm{dep},l}$ & deviation bounds per level \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Stochastic model $\psi$ (one joint law; all $\mathbb{E}[\cdot]$ over $\psi$)}} \\
+$\bload{t}$ & non-EV building load (kW) \\
+future-user process & arrivals, requests, choices, acceptances of future users \\
+$\Eext(v,k)$ & off-site energy use between sessions (kWh) \\
+$\evwin{d}$ & event calls by the utility \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{User-reported and behavioral}} \\
+$\tarr(v,k)$, $\Earr(v,k)$ & arrival time and SoC, observed at plug-in \\
+$\Ereq(v,k)$, $\treq(v,k)$ & reported required SoC (kWh) and departure time \\
+$\theta_v$ & selected option: arrival data, negotiated SoC, time \\
+$\accept{v}{k} \in \{0,1\}$ & over-charge acceptance, $\equiv 1$ in main experiments \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Decisions $\pi = (\pidr, \pich, \pineg)$}} \\
+$\FSL_d$ & pledged firm service level (kW); sole Layer-1 decision \\
+option set, over-charge offer & $\{(\Delta e_l, \Delta t_{\mathrm{dep},l}, \zeta_l)\} \cup \{\text{reject}\}$ per arrival \\
+$\Eneg(v,k)$, $\tdep(v,k)$ & negotiated floor and departure, upon user choice \\
+$\act{t} = \{\rate{t}{v}\}$ & charging/discharging rates (kW) \\
+$\assign_t$ & EV-to-charger assignment, FCFS, fixed per session \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Derived state}} \\
+$\soc{t}{v} \in [\Emin, \Emax]$ & SoC (kWh), Eq.~\eqref{eq:soc} \\
+$\Edep(v,k) \ge \Eneg(v,k)$ & departure SoC, guaranteed by Eq.~\eqref{eq:floor} \\
+$\Earr(v,k{+}1)$ & carryover, Eq.~\eqref{eq:carryover}; exogenous only at $k=0$ \\
+$\banked{v}{k}$, $\survived{v}{k}$ & banked and survived excess (kWh), Eqs.~\eqref{eq:banked}--\eqref{eq:survived} \\
+$\yieldf{v}{k}$, $\buff{d}$ & per-user yield $S/X$; realizable buffer, Eq.~\eqref{eq:buffer} \\
+$\Ptot{t}$, $\pmax$, $\pmaxpast$ & total draw (kW); billing peak and its running state \\
+$\vio{t}$ & FSL violation slack (kW), on $\evwin{d}$ only \\
+$\gch{t}{v}$, $\qdis{t}{v}$, $\zund{k}{v}$ & energy charged ($<0$ discharge); discharged; unmet floor \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Forecast models $\psihat$ (learned approximation of $\psi$)}} \\
+$\hat{b}_t$ & load forecast \\
+user forecast model & generative model of future users; acceptance rate $\ohat$ \\
+$\rhohat$ & yield estimate from realized survival history \\
+$\buffhat{d}$, $\Pmaxhat$ & forecast buffer; estimated peak, headroom boundary \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Costs and objectives}} \\
+$g_t$, $\wdr{}\,\pmax$ & energy cost; demand cost \\
+$\Cinc{d}$, $\Cpen{d}$ & capacity payment; violation penalty, Eq.~\eqref{eq:dr} \\
+$\Uflex(\theta_v)$ & ex ante flexibility contribution, Eq.~\eqref{eq:uflex} \\
+$\Ubuf(v,k)$ & ex post buffer contribution by replay, Eq.~\eqref{eq:ubuf} \\
+$\ucost{k}{v}$ & user cost, Eq.~\eqref{eq:usercost} \\
+$J$ & building expected net cost, Eq.~\eqref{eq:J} \\
+$\Omeps(\buffhat{d})$ & $\varepsilon$-feasible pledge set, Eq.~\eqref{eq:pledgeset} \\
+\bottomrule
+\end{tabular}
+\end{table*}
