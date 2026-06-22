@@ -1,0 +1,191 @@
+\section{The Coupled Problem and Its Ideal Solution}\label{sec:coupled}
+
+The three sub-problems of Section~\ref{sec:formulation} do not run in
+isolation: a commitment is only deliverable if charging and negotiation
+produce the buffer it counts on, and the value of flexibility depends on
+the commitment in force. This section assembles them into the single
+sequential problem they jointly approximate, states that problem as a
+semi-Markov decision process, and gives its perfect-information solution
+as a benchmark. The decomposition back into deployable policies is the
+subject of the approach section.
+
+\paragraph{A mechanism-design problem, not a control problem.} The
+building does not schedule obedient batteries; it elicits flexibility from
+autonomous, self-interested users who hold private information (their true
+required SoC and inconvenience of deviation) and who may charge elsewhere
+if the terms are unfavorable. The complete problem therefore minimizes the
+building's net cost \emph{inclusive of the payments it makes to users},
+subject to delivering its grid commitment, and subject to each user being
+truthfully served, individually rational, and budget-feasible to
+compensate. Payments are not an accounting overlay added after control;
+they are decision variables inside the objective, and the constraints that
+govern them are part of the problem statement.
+
+\paragraph{A semi-Markov decision process.} The three decisions act at
+three kinds of decision epoch over the billing cycle: a \emph{day-boundary}
+epoch at the end of each day, at which the commitment $\FSL_{d}$ for the
+coming day is chosen; a \emph{control} epoch every $\dt$, at which the
+charging rates $\act{t}$ are set; and an \emph{arrival} epoch at each user
+plug-in, at which the negotiated agreement $(\Eneg,\tdep)$ is reached. The
+intervals between arrival epochs are random, so the process is semi-Markov
+rather than discrete-time Markov. A single state carries everything
+decision-relevant across all three epoch types:
+\begin{equation}\label{eq:state}
+\State_t = \bigl(\{\soc{t}{v}\}_{v\in\Vset_t},\ \assign_t,\
+\pmaxpast,\ \FSL_d,\ \{\survived{v}{k}\}_{v\in\Vset_t},\
+\bload{t},\ \xi_t\bigr),
+\end{equation}
+collecting the SoC of connected EVs, charger occupancy, the running
+billing-cycle peak, the commitment currently in force, the surviving
+buffer each connected EV carries, the building load, and the report
+$\xi_t=(\Ereq,\treq)$ of any user arriving at $t$. Writing $\Acts(\State_t)$
+for the actions admissible at the epoch type active at $t$, $c(\State_t,a)$
+for the resulting increment of net cost, and
+$\Kern(\State_{t'}\mid\State_t,a)$ for the semi-Markov transition kernel
+induced by $\psi$ over the random time to the next epoch, the building
+seeks policies $\pi=(\pidr,\pich,\pineg)$ solving the Bellman recursion
+\begin{equation}\label{eq:bellman}
+\Vfn(\State_t) \;=\; \min_{a\,\in\,\Acts(\State_t)}\
+\mathbb{E}_{\psi}\bigl[\, c(\State_t,a) \;+\; \Vfn(\State_{t'}) \,\bigr],
+\end{equation}
+where the expectation is over the next state $\State_{t'}\sim\Kern$.
+Because a policy maps each realized state to an action, it can condition
+only on what that state contains, so non-anticipativity is automatic and
+needs no separate constraint. Equation~\eqref{eq:bellman} is the problem we
+would ideally solve: it optimizes commitment, charging, and negotiated
+agreements jointly, respecting both the gradual revelation of information
+through $\Kern$ and the users' private types encoded in $\psi$. It is
+intractable for the two reasons it is faithful, the dimensionality of
+$\State_t$ and the private, strategic nature of the users.
+
+\paragraph{No fixed order across days.} The three epoch types interleave;
+they are not a fixed daily sequence. A day may carry no event, in which
+case the commitment binds nothing and only charging and negotiation act; a
+day may see arrivals and negotiation but set no peak; the commitment is
+re-chosen each day-boundary and may be null \eqref{eq:pledgedepth}. The
+coupling across days is therefore not an ordering but a dependence carried
+through the state \eqref{eq:state}: today's surviving buffer and running
+peak are inputs to tomorrow's commitment and charging. Within a single
+day the commitment is fixed at the preceding day-boundary epoch, so that
+day's charging and negotiation act under a known $\FSL_d$; this is a
+property of when the epochs occur, not an order imposed to break a cycle.
+\paragraph{The oracle.} Relaxing \emph{information alone} yields a
+benchmark we can state in closed form. Suppose a planner observes the
+entire realization in advance, every arrival, off-site trip, event call,
+and load value, and knows each user's true type. Every expectation in
+\eqref{eq:bellman} then collapses onto a known quantity and every
+non-anticipativity constraint disappears, and the recursion degenerates
+into a single full-horizon optimization
+\begin{equation}\label{eq:oracle}
+\Porc:\quad \min_{\{\FSL_d\},\,\{\rate{t}{v}\},\,\{\Eneg,\tdep\},\,\{\text{payments}\}}\ J
+\quad\text{s.t.}\quad \eqref{eq:socbounds}\text{--}\eqref{eq:buffer},\ \text{IR, BF},
+\end{equation}
+with $J$ exactly as in \eqref{eq:J}. Crucially, the oracle relaxes
+information, not autonomy: users remain free agents, so each must still be
+left no worse off than charging externally,
+\begin{equation}\label{eq:ir}
+\ucost{k}{v}\ \le\ \zext(v,k)\qquad\text{(individual rationality, IR)},
+\end{equation}
+and the building still pays for the flexibility it uses, with each payment
+bounded by the cost that user demonstrably saves
+\begin{equation}\label{eq:bf}
+\ucost{k}{v}\ \ge\ -\,\Uexact(\theta_v)\qquad\text{(budget feasibility, BF)},
+\end{equation}
+where $\Uexact(\theta_v)$ is the user's \emph{exact} marginal value, the
+difference in $J$ between the optimal plan with and without $v$'s agreed
+flexibility, computable directly because types are known. Because types
+are known, truthful elicitation is free and strategy-proofness imposes no
+constraint; the planner sets each user's agreed point $(\Eneg,\tdep)$
+directly. The oracle is unattainable in deployment, but $\Porc$ is a valid
+lower bound on the net cost of any policy, and it optimizes the
+\emph{same} objective \eqref{eq:J} as the deployed system, so the two
+differ only in information and decomposition, not in what they value.
+\paragraph{Three coupling channels.} The oracle sees, and trades off at
+once, three distinct couplings that any decomposition must contend with:
+\begin{enumerate}
+\item \textbf{Intra-day, commitment to delivery to pricing.} A deeper
+$\FSL_d$ tightens the charging feasible set \eqref{eq:fslslack}, which
+determines the discharge the negotiation can offer and the value at which
+flexibility prices out. This chain runs in one direction within a day.
+\item \textbf{Inter-day, through the buffer.} Energy banked and survived
+on one visit \eqref{eq:banked}--\eqref{eq:survived} is the buffer
+\eqref{eq:buffer} deliverable on the next, which sets how deep a future
+commitment can safely go (Proposition~\ref{prop:monotone}). This is the
+carryover \eqref{eq:carryover} lifted to the planning level.
+\item \textbf{Inter-day, through the peak.} The demand charge is a maximum
+over the entire cycle \eqref{eq:peak}, so a charging choice on one day can
+be rendered worthless or decisive by a peak set on another. Persistence
+breaks the per-day separability that a single-building, non-persistent
+controller could exploit, so this coupling cannot be removed by treating
+days independently.
+\end{enumerate}
+The oracle resolves all three simultaneously. The deployable decomposition (approach section) severs the intra-day chain into the fixed one-way order above and approximates the two inter-day couplings through the forecasts $\psihat$; it does not alter the objective, the payments, or the constraints, only the order and information under which they are solved.
+
+\paragraph{The building objective.} All of the above optimize one
+quantity, the building's expected net cost over the billing cycle:
+\paragraph{Building objective.} Collecting the per-process contributions, the building minimizes the same net cost \eqref{eq:oracle} optimized by the oracle, now over the decomposed policies:
+\begin{equation}\label{eq:J}
+\begin{aligned}
+J = \mathbb{E}_{\psi}\Bigl[\, &\sum_{t \in \Tset} g_t + \wdr{}\,\pmax - \sum_{d} \Cinc{d} + \sum_{d} \Cpen{d} + \Ksoc \sum_{v,k} \zund{k}{v}\\ &+ \Kbatt \sum_{v,t} \qdis{t}{v} + \sum_{v,k} \bigl(\alpha\,\Uflex(\theta_v) + \Ubuf(v,k)\bigr)
+\Bigr].
+\end{aligned}
+\end{equation}
+which is the $J$ appearing in the oracle \eqref{eq:oracle} and in every
+sub-problem objective of Section~\ref{sec:formulation}. The capacity
+payment enters with a negative sign (revenue), the violation penalty and
+the user payments with a positive sign (cost); the payments
+$\alpha\Uflex+\Ubuf$ are transfers the building makes to users and are part
+of the objective by construction.
+
+\paragraph{Information structure.} Within day $d$, information flows
+one way:
+\begin{equation*}
+\begin{aligned}
+\FSL_d \;\longrightarrow\; \text{charging feasible set}\\
+\;\longrightarrow\; \text{negotiation option generation};
+\end{aligned}
+\end{equation*}
+within a day the negotiation operates under the committed FSL and does not determine it. There is no within-day cycle to break: the commitment was fixed at the preceding day-boundary epoch. Across days, the loop closes through the buffer and the forecasts:
+\begin{equation*}
+(\text{over-charge},\, o,\, \rho)\ \text{on day } d
+\;\longrightarrow\; (\buffhat{d+1},\, \ohat,\, \rhohat)
+\;\longrightarrow\; \FSL_{d+1}.
+\end{equation*}
+The persistence buffer expands the feasible commitment set
+\eqref{eq:pledgeset}, formalized in Proposition~\ref{prop:monotone}; the
+committed FSL gives the negotiation a concrete discharge target and an external revenue source. The building can extend a firm upstream guarantee because the committed quantity is selected after observing the buffer its users have already voluntarily accumulated.
+\paragraph{Delivery risk.} The FSL is committed against $\psihat$. If
+realized acceptance or yield falls below forecast, then $\buff{d} <
+\buffhat{d}$ and the building is exposed to $\vio{t} > 0$ during events,
+with the penalty borne entirely by the building and hedged by $(\lambda, \varepsilon)$ through \eqref{eq:pledgedepth}.
+\paragraph{Solution space.} A feasible solution comprises:
+\begin{itemize}
+\item a non-anticipative commitment sequence $\{\FSL_d\}$;
+\item an assignment $\assign_t$ mapping each arriving EV to a single
+charger for its entire session;
+\item per-step rates $\{\rate{t}{v}\}$ satisfying
+\eqref{eq:socbounds}--\eqref{eq:load}, \eqref{eq:floor},
+\eqref{eq:fslslack}, the charger limits, and the headroom rule;
+\item negotiated agreements: for each session, an offered option set and
+the user's selected $(\Eneg, \tdep, \zeta)$, with deviations within the chosen level's bounds;
+\item over-charge acceptances $\{\accept{v}{k}\}$ and the induced buffer
+accounting \eqref{eq:banked}--\eqref{eq:buffer},
+\end{itemize}
+jointly satisfying the individual-rationality and budget-feasibility constraints \eqref{eq:ir}--\eqref{eq:bf}.
+
+\paragraph{Alternative: a social objective.} The formulation above prices
+flexibility through participation constraints: a user's inconvenience
+enters only as the threshold \eqref{eq:ir} above which they must be
+compensated. A natural upgrade folds inconvenience directly into the
+objective, minimizing building cost \emph{plus} total user inconvenience
+$\sum_{v,k} I^v_k$ rather than treating it as a constraint. Under this
+social formulation the participation constraint relaxes, since a user may
+be assigned a deviation whose inconvenience exceeds their compensation if
+it improves total welfare, and the payments become the mechanism that
+splits the joint surplus rather than transfers bounded by individual
+savings. The social optimum can incur higher building cost yet higher
+total welfare than $\Porc$. We adopt the building-cost objective with
+user constraints in what follows, as it matches the cost accounting of the
+prior systems and keeps the survey-estimated inconvenience weights out of
+the objective; we return to the social formulation as a direction for
+extension.
