@@ -2,7 +2,7 @@
 
 \input{diagrams/process_flow}
 
-We consider a single commercial building that manages its own EV charging infrastructure, serves a population of persistent EV users, and participates in a utility demand response (DR) program. The system performs three processes at three timescales, each governed by its own policy: (i) day-ahead, a commitment policy $\pidr$ commits a Firm Service Level to the utility; (ii) in real time, a charging policy $\pich$ schedules charging and discharging to deliver against the commitment at minimum cost; (iii) at each user arrival, a negotiation policy $\pineg$ offers compensated adjustments to the user's required SoC and departure time, and extends a cost-free over-charge offer when headroom permits. We first declare the shared physical layer (Section~\ref{sec:specs}), then close each process in turn with its definitions, constraints, and objective contribution (Sections~\ref{sec:dr}--\ref{sec:negotiation}), and finally assemble the coupled objective and information structure (Section~\ref{sec:coupled}). The complete variable dependency structure is summarized in Table~\ref{tab:vartree}.
+We consider a single commercial building that manages its own EV charging infrastructure, serves a population of persistent EV users, and participates in a utility demand response (DR) program. The system performs three processes at three timescales, each governed by its own policy: (i) day-ahead, a commitment policy $\pidr$ commits a Firm Service Level to the utility; (ii) in real time, a charging policy $\pich$ schedules charging and discharging to deliver against the commitment at minimum cost; (iii) at each user arrival, a negotiation policy $\pineg$ offers compensated adjustments to the user's required SoC and departure time, and extends a cost-free over-charge offer when headroom permits. We first declare the shared physical layer (Section~\ref{sec:specs}); state the complete coupled problem and its ideal (oracle) solution, which the system as a whole approximates (Section~\ref{sec:coupled-ideal}); then close each of the three resulting sub-problems in turn with its definitions, constraints, and objective contribution (Sections~\ref{sec:dr}--\ref{sec:negotiation}); and finally record the information structure and feasible solution that the decomposition induces (Section~\ref{sec:coupled}). The complete variable dependency structure is summarized in Table~\ref{tab:vartree}.
 
 \subsection{Specifications}\label{sec:specs}
 
@@ -51,6 +51,146 @@ operates with a learned approximation $\psihat$: a load forecast $\hat{b}_t$; a 
 
 \paragraph{Policies.} The building's policy is the triple $\pi =
 (\pidr, \pich, \pineg)$ with decision epochs at the end of each day, at every time step, and at every user arrival, respectively. All derived quantities below (SoC trajectories, peaks, costs) are implicitly determined by $\pi$ and the realized user choices; we omit this dependence from the notation for readability.
+
+
+\subsection{The Coupled Problem and Its Ideal Solution}\label{sec:coupled-ideal}
+
+Before decomposing the system into the three policies above, we state the
+problem they jointly approximate. This serves two purposes: it makes the
+coupling between demand response, persistence, and negotiation explicit,
+and it furnishes an unattainable benchmark against which any tractable
+policy can be measured.
+
+\paragraph{A mechanism-design problem, not a control problem.} The
+building does not schedule obedient batteries; it elicits flexibility from
+autonomous, self-interested users who hold private information (their true
+required SoC and inconvenience of deviation) and who may charge elsewhere
+if the terms are unfavorable. The complete problem therefore minimizes the
+building's net cost \emph{inclusive of the payments it makes to users},
+subject to delivering its grid commitment, and subject to each user being
+truthfully served, individually rational, and budget-feasible to
+compensate. Payments are not an accounting overlay added after control;
+they are decision variables inside the objective, and the constraints that
+govern them are part of the problem statement.
+
+\paragraph{The sequential problem.} Decisions arrive at three interleaved
+timescales over the billing cycle and must be taken without knowledge of
+what has not yet occurred. Let the system state at time $t$ be
+\begin{equation}\label{eq:state}
+\State_t = \bigl(\{\soc{t}{v}\}_{v\in\Vset_t},\ \assign_t,\
+\pmaxpast,\ \FSL_d,\ \bload{t}\bigr),
+\end{equation}
+collecting the SoC of connected EVs, charger occupancy, the running
+billing-cycle peak, the day's committed FSL, and the building load;
+$\pmaxpast$ and the persistence buffer it summarizes are the components
+that couple consecutive days. Writing $\Filt_t$ for the information
+available at $t$, the building seeks policies
+$\pi=(\pidr,\pich,\pineg)$ solving
+\begin{equation}\label{eq:bellman}
+\Vfn(\State_t) = \min_{a_t\ \in\ \mathcal{A}(\State_t),\ a_t\,\preceq\,\Filt_t}\
+\mathbb{E}_{\psi}\bigl[\, c(\State_t,a_t) + \Vfn(\State_{t+1}) \,\bigr],
+\end{equation}
+where the action $a_t$ ranges over the commitment, charging, and
+negotiation decisions active at $t$; $c(\cdot)$ is the corresponding
+increment of the net cost \eqref{eq:J}; the constraint $a_t\preceq\Filt_t$
+enforces non-anticipativity (each decision depends only on what is known
+when it is made); and the expectation is over the uncertainty law $\psi$.
+Equation \eqref{eq:bellman} is the problem we would ideally solve: it
+optimizes the commitment, the charging, and the negotiated agreements
+\emph{jointly}, respecting both the gradual revelation of information and
+the users' private types. It is intractable for the same two reasons it is
+faithful, namely the curse of dimensionality in $\State_t$ and the private,
+strategic nature of the users encoded in $\psi$.
+
+\paragraph{The oracle.} Relaxing \emph{information alone} yields a
+benchmark we can state in closed form. Suppose a planner observes the
+entire realization in advance, every arrival, off-site trip, event call,
+and load value, and knows each user's true type. Every expectation in
+\eqref{eq:bellman} then collapses onto a known quantity and every
+non-anticipativity constraint disappears, and the recursion degenerates
+into a single full-horizon optimization
+\begin{equation}\label{eq:oracle}
+\Porc:\quad \min_{\{\FSL_d\},\,\{\rate{t}{v}\},\,\{\Eneg,\tdep\},\,\{\text{payments}\}}\ J
+\quad\text{s.t.}\quad \eqref{eq:socbounds}\text{--}\eqref{eq:buffer},\ \text{IR, BF},
+\end{equation}
+with $J$ exactly as in \eqref{eq:J}. Crucially, the oracle relaxes
+information, not autonomy: users remain free agents, so each must still be
+left no worse off than charging externally,
+\begin{equation}\label{eq:ir}
+\ucost{k}{v}\ \le\ \zext(v,k)\qquad\text{(individual rationality, IR)},
+\end{equation}
+and the building still pays for the flexibility it uses, with each payment
+bounded by the cost that user demonstrably saves
+\begin{equation}\label{eq:bf}
+\ucost{k}{v}\ \ge\ -\,\Uexact(\theta_v)\qquad\text{(budget feasibility, BF)},
+\end{equation}
+where $\Uexact(\theta_v)$ is the user's \emph{exact} marginal value, the
+difference in $J$ between the optimal plan with and without $v$'s agreed
+flexibility, computable directly because types are known. Because types
+are known, truthful elicitation is free and strategy-proofness imposes no
+constraint; the planner sets each user's agreed point $(\Eneg,\tdep)$
+directly. The oracle is unattainable in deployment, but $\Porc$ is a valid
+lower bound on the net cost of any policy, and it optimizes the
+\emph{same} objective \eqref{eq:J} as the deployed system, so the two
+differ only in information and decomposition, not in what they value.
+
+\paragraph{Three coupling channels.} The oracle sees, and trades off at
+once, three distinct couplings that any decomposition must contend with:
+\begin{enumerate}
+\item \textbf{Intra-day, commitment to delivery to pricing.} A deeper
+$\FSL_d$ tightens the charging feasible set \eqref{eq:fslslack}, which
+determines the discharge the negotiation can offer and the value at which
+flexibility prices out. This chain runs in one direction within a day.
+\item \textbf{Inter-day, through the buffer.} Energy banked and survived
+on one visit \eqref{eq:banked}--\eqref{eq:survived} is the buffer
+\eqref{eq:buffer} deliverable on the next, which sets how deep a future
+commitment can safely go (Proposition~\ref{prop:monotone}). This is the
+carryover \eqref{eq:carryover} lifted to the planning level.
+\item \textbf{Inter-day, through the peak.} The demand charge is a maximum
+over the entire cycle \eqref{eq:peak}, so a charging choice on one day can
+be rendered worthless or decisive by a peak set on another. Persistence
+breaks the per-day separability that a single-building, non-persistent
+controller could exploit, so this coupling cannot be removed by treating
+days independently.
+\end{enumerate}
+The oracle resolves all three simultaneously. The decomposition we develop
+next severs the intra-day chain into a fixed one-way order and approximates
+the two inter-day couplings through the forecasts $\psihat$; it does not
+alter the objective, the payments, or the constraints, only the order and
+information under which they are solved.
+
+\paragraph{From the oracle to three sub-problems.} Restoring sequential,
+private information forces a split into the three policies of
+Sections~\ref{sec:dr}--\ref{sec:negotiation}: a day-ahead commitment
+problem $\Pdr$, a real-time charging problem $\Pch$, and a per-arrival
+negotiation problem $\Pneg$. The split is a tractability device, not a
+change of problem: $\Pdr$, $\Pch$, and $\Pneg$ together optimize the same
+$J$ under the same IR and BF constraints as $\Porc$. What the
+decomposition adds is exactly what private, sequential information costs:
+incentive compatibility (strategy-proofness, the price of not knowing
+types), a per-arrival options menu and cost-sharing parameter $\alpha$
+(the mechanism that elicits flexibility from autonomous users in real
+time), and a counterfactual-replay estimator of $\Uexact$ (a tractable
+proxy for the exact marginal value the oracle computes directly). The gap
+between $\Porc$ and the decomposed policy is therefore the combined price
+of these three concessions, and we quantify it empirically in Section~7.
+
+\paragraph{Alternative: a social objective.} The formulation above prices
+flexibility through participation constraints: a user's inconvenience
+enters only as the threshold \eqref{eq:ir} above which they must be
+compensated. A natural upgrade folds inconvenience directly into the
+objective, minimizing building cost \emph{plus} total user inconvenience
+$\sum_{v,k} I^v_k$ rather than treating it as a constraint. Under this
+social formulation the participation constraint relaxes, since a user may
+be assigned a deviation whose inconvenience exceeds their compensation if
+it improves total welfare, and the payments become the mechanism that
+splits the joint surplus rather than transfers bounded by individual
+savings. The social optimum can incur higher building cost yet higher
+total welfare than $\Porc$. We adopt the building-cost objective with
+user constraints in what follows, as it matches the cost accounting of the
+prior systems and keeps the survey-estimated inconvenience weights out of
+the objective; we return to the social formulation as a direction for
+extension.
 
 \subsection{Process I: Demand-Response Commitment}\label{sec:dr}
 
@@ -175,10 +315,9 @@ and $\Ubuf(v,k) = 0$ on sessions overlapping no event. The replay $J^{\mathrm{re
 \end{equation}
 where $\alpha \in [0,1]$ is the cost-sharing parameter on the flexibility component, and the buffer component is paid in full; a share parameter on $\Ubuf$ analogous to $\alpha$ is possible but fixed to one here. The banked excess itself is provided at no cost: $\banked{v}{k}$ does not appear in \eqref{eq:usercost}. Every term settles on realized quantities; no term depends on a forecast of user $v$'s behavior. The behavioral model mapping options to choice and acceptance probabilities (user types, inconvenience weights, and satisfaction) is presented in Section~5.
 
-\subsection{Coupled Objective and Information Structure}\label{sec:coupled}
+\subsection{Decomposed Objective and Information Structure}\label{sec:coupled}
 
-\paragraph{Building objective.} The building minimizes its expected net
-cost over the billing cycle:
+\paragraph{Building objective.} Collecting the per-process contributions, the building minimizes the same net cost \eqref{eq:oracle} optimized by the oracle, now over the decomposed policies:
 \begin{equation}\label{eq:J}
 \begin{aligned}
 J = \mathbb{E}_{\psi}\Bigl[\, &\sum_{t \in \Tset} g_t + \wdr{}\,\pmax - \sum_{d} \Cinc{d} + \sum_{d} \Cpen{d} + \Ksoc \sum_{v,k} \zund{k}{v}\\ &+ \Kbatt \sum_{v,t} \qdis{t}{v} + \sum_{v,k} \bigl(\alpha\,\Uflex(\theta_v) + \Ubuf(v,k)\bigr)
