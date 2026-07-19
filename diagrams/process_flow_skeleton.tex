@@ -1,0 +1,79 @@
+% Three-policy-lane view of P-CONSENT. The three policies are the primary
+% structure: pi^DR (day-ahead), pi^ch (every dt), pi^neg (per arrival), each
+% on its own clock. Vertical arrows are the within-day dependency (FSL ->
+% charging feasible set -> negotiation options); the dashed arrow is the sole
+% cross-day link (surviving buffer). Not a timeline: see Sec. 4.
+% Requires \usetikzlibrary{positioning, fit, backgrounds, arrows.meta}.
+\begin{figure*}[t]
+\centering
+\newcommand{\ltitle}{\bfseries}%
+\newcommand{\leqn}{\scriptsize\itshape\color{black!55}}%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  every node/.style={transform shape},
+  lane/.style={rectangle, rounded corners=3pt, draw=black!55, thick,
+               align=left, inner sep=7pt, text width=0.60\textwidth,
+               minimum height=1.55cm},
+  clock/.style={rectangle, rounded corners=3pt, draw=black!40, thick,
+                fill=white, align=center, inner sep=4pt, text width=1.9cm,
+                minimum height=1.55cm, font=\scriptsize},
+  dep/.style={-{Latex[length=2.2mm]}, very thick, black!75},
+  back/.style={-{Latex[length=2.2mm]}, very thick, dashed, black!75},
+  deplab/.style={font=\scriptsize\itshape, text=black!60, align=center, fill=white, inner sep=1pt}
+]
+% ============ LANE 1: pi^DR (day-ahead) ============
+\node[clock, fill=blue!8] (cDR) {\ltitle Day-ahead\\(end of $d{-}1$)\\[2pt]\leqn once/day};
+\node[lane, fill=blue!5, right=0.35cm of cDR] (DR) {%
+{\ltitle Layer $\pidr$: demand-response commitment.}\ \ Forecast the surviving
+buffer, then commit a defensible peak cap $\FSL_d$ and earn a capacity payment.
+Fixed before any day-$d$ arrival.\\[2pt]
+{\leqn $\psihat\!\to\!\buffhat{d}\!\to\!\Omeps$; set
+$\FSL_d(\lambda)$;\ earn $\Cinc{d}$}};
+
+% ============ LANE 2: pi^ch (every dt) ============
+\node[clock, fill=teal!9, below=1.7cm of cDR] (cCH) {\ltitle Every $\dt$\\[2pt]\leqn continuous};
+\node[lane, fill=teal!6, right=0.35cm of cCH] (CH) {%
+{\ltitle Layer $\pich$: real-time charging.}\ \ Set charge/discharge rates at
+least cost under the committed FSL; bank only into spare capacity; during an
+event (if called) discharge to hold load under $\FSL_d$.\\[2pt]
+{\leqn minimize s.t.\--;
+bank if $\Ptot{t}\!<\!\min(\Pmaxhat,\text{cap})$; slack $\vio{t}$ via $\Cpen{d}$}};
+
+% ============ LANE 3: pi^neg (per arrival) ============
+\node[clock, fill=orange!10, below=1.7cm of cCH] (cNEG) {\ltitle Per arrival\\/ departure\\[2pt]\leqn event-driven};
+\node[lane, fill=orange!6, right=0.35cm of cNEG] (NEG) {%
+{\ltitle Layer $\pineg$: negotiation \& persistence.}\ \ Offer each driver
+compensated flexibility and a banking price $\pbank{v}{k}$; at departure settle
+energy, banking, and realized event/peak help; carry the surviving buffer over.\\[2pt]
+{\leqn price by $\Uflex$$\Rightarrow\!\Eneg,\tdep$; settle
+$\ucost{k}{v}$, $\Ubuf,\Udc$--;
+carry $\survived{v}{k+1}$}};
+
+% ============ WITHIN-DAY DEPENDENCY (top -> down) ============
+\draw[dep] (DR.south) -- (CH.north)
+  node[deplab, midway] {$\FSL_d$ constrains charging feasible set};
+\draw[dep, <->] (CH.south) -- (NEG.north)
+  node[deplab, midway] {discharge capability sets offerable flexibility};
+
+% ============ CROSS-DAY LINK (bottom -> up, dashed) ============
+\draw[back] (NEG.east) -- ++(0.7,0)
+  node[midway, right, font=\scriptsize\itshape, text=black!70, align=center]
+    {surviving buffer\\ $\buff{d}\!\to\!\buffhat{d+1}$}
+  |- (DR.east);
+
+  
+
+\end{tikzpicture}
+\caption{The three policies of P-CONSENT, each acting on its own clock:
+$\pidr$ commits the firm service level a day ahead, $\pich$ sets charging and
+discharging rates every $\dt$, and $\pineg$ negotiates flexibility and settles
+payments at each arrival and departure. Solid vertical arrows are the sole
+within-day dependency, the committed FSL constrains the charging feasible set,
+which in turn sets the flexibility the negotiation can offer; this is a
+dependency, not a temporal order, since the charging and negotiation epochs
+interleave continuously through the day (the problem definition (Section~\ref{sec:formulation})). The dashed
+arrow is the only coupling between days: the buffer that survives a driver's
+trip becomes tomorrow's deliverable buffer and sharpens the forecast that sets
+the next commitment.}
+\label{fig:processflow}
+\end{figure*}

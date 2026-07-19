@@ -135,6 +135,8 @@
 \newcommand{\muDR}{\mu^{\mathrm{DR}}}               % event-value dual: $ per kWh of survived buffer
 \newcommand{\etarget}[1]{E^{\mathrm{tgt}}_{#1}}     % terminal banking target of user #1 (kWh)
 \newcommand{\Kbank}[1]{K^{\mathrm{bank}}_{#1}}      % terminal-shortfall reward weight of user #1
+\newcommand{\Udc}{U^{\mathrm{dc}}}                  % demand-charge peak-share incentive
+\newcommand{\pmaxre}{p^{\mathrm{re}}_{\max}}        % realized billing-cycle peak under replay
 \newcommand{\bshort}[1]{\beta_{#1}}                 % banking shortfall of user #1 (kWh)
 \newcommand{\Nexc}{N^{\star}}                       % exceedance-step count under optimized recourse
 \newcommand{\Fsafe}{\FSL^{\mathrm{safe}}}           % demand-charge guardrail on the FSL
@@ -157,7 +159,7 @@
 
 %==============================================================
 % \input{sections/introduction}
-
+\input{sections/abstract}
 \input{sections/introduction}
 \input{sections/related_work}
 \input{sections/formulation}

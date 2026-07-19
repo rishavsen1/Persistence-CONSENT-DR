@@ -165,14 +165,20 @@ that marginal values need not sum to the total.
 \end{proof}
 
 \begin{lemma}[Budget feasibility of replay payments]\label{lem:replaybf}
-Let $\Ubuf(v,k)$ be the replay marginal \eqref{eq:ubuf} and let the
-paid amount be the capped marginal of
-Section~\ref{sec:negotiation}. Then
+Let $\Ubuf(v,k)$ and $\Udc(v,k)$ be the replay shares
+\eqref{eq:ubuf}--\eqref{eq:udc} and let the paid amount be the capped
+combined marginal $\min\bigl(\Ubuf(v,k)+\Udc(v,k),\ \text{proportional
+share}\bigr)$ of Section~\ref{sec:negotiation}. Then
 $\sum_{v} \text{paid}(v) \le J^{\mathrm{re}}_d(\emptyset) -
 J^{\mathrm{re}}_d(\buff{d})$: buffer payments never exceed the
 realized saving the buffer produced. If $J^{\mathrm{re}}_d$ is
 submodular in the buffer set, the cap never binds and full marginals
-are paid.
+are paid. Because $\Ubuf+\Udc$ is a partition of the single replay
+difference \eqref{eq:ubuf}, the demand-charge and energy-plus-penalty
+shares are jointly bounded by this one saving; $\pmaxre$ being a $\max$
+over disjoint steps is itself submodular, so on non-event days the
+$\Udc$-only payment inherits the same guarantee against the realized
+demand-charge reduction $\wdr{}(\pmaxre(\emptyset) - \pmaxre(\buff{d}))$.
 \end{lemma}
 
 \begin{proof}

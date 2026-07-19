@@ -1,6 +1,6 @@
 \section{Problem Formulation}\label{sec:formulation}
 
-\input{diagrams/process_flow}
+\input{diagrams/process_flow_skeleton}
 
 We consider a single commercial building that manages its own EV charging infrastructure, serves a population of persistent EV users, and participates in a utility demand response (DR) program. Three decisions act on the system at three timescales: a day-ahead \emph{commitment} of a Firm Service Level to the utility (policy $\pidr$), real-time \emph{charging} and discharging (policy $\pich$), and per-arrival \emph{negotiation} of compensated adjustments to a user's required SoC and departure time (policy $\pineg$). We first declare the shared physical layer (Section~\ref{sec:specs}), then define each of the three sub-problems on its own terms, its decisions, constraints, and objective contribution (Sections~\ref{sec:dr}--\ref{sec:negotiation}). Section~\ref{sec:coupled} then assembles them into the single sequential problem they jointly approximate and states its ideal solution. The complete variable dependency structure is summarized in Table~\ref{tab:vartree}.
 
@@ -220,27 +220,68 @@ components with different settlement times. The flexibility component is the ex 
 \Uflex(\theta_v) \;=\; \mathbb{E}_{\psihat}\Bigl[
 J_d\bigl(\bm{\theta}_{\setminus v}\bigr) - J_d\bigl(\bm{\theta}_{\setminus v}, \theta_v\bigr) \Bigr],
 \end{equation}
-where $J_d(\cdot)$ is the day-$d$ building cost under $\pich$ and $\bm{\theta}_{\setminus v}$ collects the realized choices of other users and sampled future arrivals. The buffer component settles ex post: on a session overlapping an event window, it is the realized cost difference obtained by replaying the day with and without $v$'s surviving buffer,
+where $J_d(\cdot)$ is the day-$d$ building cost under $\pich$ and $\bm{\theta}_{\setminus v}$ collects the realized choices of other users and sampled future arrivals. The buffer value settles ex post from a single day-$d$ replay, which we \emph{partition} into a demand-charge share $\Udc$ \eqref{eq:udc}, rewarding reduction of the billing-cycle peak, and an energy-plus-penalty share $\Ubuf$ \eqref{eq:ubuf}, rewarding everything else; splitting one replay rather than summing two independent solves prevents a discharge that both shaves the peak and avoids the event penalty from being paid twice. On a session overlapping an event window the replay is the realized cost difference obtained with and without $v$'s surviving buffer,
 \begin{equation}\label{eq:ubuf}
 \Ubuf(v,k) \;=\;
-J^{\mathrm{re}}_d\bigl(\buff{d} \setminus \survived{v}{k}\bigr) - J^{\mathrm{re}}_d\bigl(\buff{d}\bigr),
+\Bigl[\,J^{\mathrm{re}}_d\bigl(\buff{d} \setminus \survived{v}{k}\bigr) - J^{\mathrm{re}}_d\bigl(\buff{d}\bigr)\,\Bigr] \;-\; \Udc(v,k),
 \end{equation}
-and $\Ubuf(v,k) = 0$ on sessions overlapping no event. The replay $J^{\mathrm{re}}_d$ is computed by re-solving the day-$d$ charging problem \eqref{eq:chobj} with the realized load, arrivals, choices, and event window all held fixed at their observed values, and with only the charging and discharging rates re-optimized; the two evaluations differ solely in whether $v$'s surviving buffer $\survived{v}{k}$ is available for discharge. Because the realized peak and event slack are recomputed under this re-optimization, and the building cost includes the degradation term $\Kbatt$, the difference \eqref{eq:ubuf} is the true marginal value of $v$'s buffer on that day, automatically net of battery wear; the user never bears wear separately. We use the per-user marginal value rather than a Shapley value, but the
+i.e., the day-$d$ replay difference \emph{net of} its demand-charge component $\Udc$ \eqref{eq:udc}, leaving only the energy and event-penalty value; and $\Ubuf(v,k) = 0$ on sessions overlapping no event. The replay $J^{\mathrm{re}}_d$ is computed by re-solving the day-$d$ charging problem \eqref{eq:chobj} with the realized load, arrivals, choices, and event window all held fixed at their observed values, and with only the charging and discharging rates re-optimized; the two evaluations differ solely in whether $v$'s surviving buffer $\survived{v}{k}$ is available for discharge. Because the realized peak and event slack are recomputed under this re-optimization, and the building cost includes the degradation term $\Kbatt$, the bracketed difference is the true marginal value of $v$'s buffer on that day, automatically net of battery wear; the user never bears wear separately. Subtracting $\Udc$ partitions that one difference into a demand-charge share \eqref{eq:udc} and an energy-plus-penalty share \eqref{eq:ubuf}, so the two incentives sum to a single replay difference and cannot double-count. We use the per-user marginal value rather than a Shapley value, but the
 aggregate must be handled with care: marginal contributions under-sum
 the total when buffers are substitutes (several buffers shaving the
 same peak, the typical case) yet can \emph{over-sum} it when buffers
 are complements, so paying full marginals is not automatically budget
 feasible. We therefore pay the capped marginal
-$\min\bigl(\Ubuf(v,k),\ \text{proportional share of the total replay
+$\min\bigl(\Ubuf(v,k)+\Udc(v,k),\ \text{proportional share of the total replay
 saving}\bigr)$, which coincides with the plain marginal whenever
 $J^{\mathrm{re}}_d$ is submodular in the buffer set and binds only in
 the complementary case; Lemma~\ref{lem:replaybf} states the resulting
 budget-feasibility guarantee.
 
+\paragraph{Peak-share incentive.} A surviving buffer shaves the monthly
+peak whenever it lets the building discharge at its billing-cycle
+maximum, \emph{event or not}. We isolate this value as the
+demand-charge share of the replay,
+\begin{equation}\label{eq:udc}
+\Udc(v,k) \;=\; \wdr{} \cdot \bigl(\,\pmaxre(\buff{d}\setminus\survived{v}{k})
+- \pmaxre(\buff{d})\,\bigr),
+\end{equation}
+where $\pmaxre(\cdot)$ is the realized billing-cycle peak recomputed
+under the same fixed-load, rates-only re-optimization used for the
+replay, with and without $v$'s surviving buffer, clamped at zero. The
+replay peak is floored at the running cycle maximum,
+$\pmaxre \ge \pmaxpast$, since a day whose peak falls below the
+month's running maximum cannot reduce the demand charge; this floor is
+exactly the gate that sets $\Udc = 0$ on such days, so the gating is a
+consequence of the demand-charge structure rather than a heuristic. By
+construction $\Udc$ is the demand-charge component that \eqref{eq:ubuf}
+subtracts, so on event days the user's total buffer reward
+$\Ubuf + \Udc$ equals the single replay difference exactly; the split
+only relabels which part is attributed to peak shaving. When the
+event-window discharge does not itself set the cycle peak, the
+attribution correctly assigns $\Udc = 0$ and the whole difference
+remains in $\Ubuf$; the partition tracks where value is created rather
+than splitting a number arbitrarily. Its substantive effect is on
+\emph{non-event} days: the event-penalty share $\Ubuf$ is zero there,
+but a buffer can still hold the billing-cycle peak down, and $\Udc$
+credits that reduction, which the event-only buffer term would leave
+unpaid. On such days only the demand-charge share is credited; any
+residual energy-cost saving from the off-event re-optimization is
+retained by the operator, since off-event energy shifting is not part
+of the buffer's rewarded service. $\Udc$ is paid on realized discharge
+only. Two limitations are inherent to the day-by-day settlement and
+stated as such: because a later day may hold the true monthly maximum,
+a $\Udc$ credited on day $d$ reflects the realized bill only when day
+$d$ ultimately holds the cycle peak (a certainty-equivalence gap,
+bounded by forecast quality and reported against the realized
+demand-charge reduction in the experiments); and when several buffers
+shave the same peak step, the per-user attribution is the same
+marginal-versus-Shapley question already noted for $\Ubuf$, handled by
+the proportional cap.
+
 \paragraph{User cost.} User $v$'s cost for session $k$ is
 \begin{equation}\label{eq:usercost}
 \ucost{k}{v} \;=\; \sum_{t \in \Tvk} \we{t}\,\gch{t}{v}
-\;-\; \alpha\,\Uflex(\theta_v) \;-\; \Ubuf(v,k)
+\;-\; \alpha\,\Uflex(\theta_v) \;-\; \Ubuf(v,k) \;-\; \Udc(v,k)
 \;+\; \pbank{v}{k}\,\banked{v}{k},
 \end{equation}
 where $\alpha \in [0,1]$ is the cost-sharing parameter on the flexibility component, and the buffer component is paid in full; a share parameter on $\Ubuf$ analogous to $\alpha$ is possible but fixed to one here. The banked excess is settled at the banking rate \eqref{eq:pbank}, which is zero on days preceding anticipated events and at most the avoided next-session cost otherwise, so the user is never charged above their outside procurement cost for banked energy. Every term settles on realized quantities; the single forecast entering a user-facing price is $\cmarg{v}$ inside \eqref{eq:pbank}, and it is a forecast of \emph{prices}, not of user $v$'s behavior. The behavioral model mapping options to choice and acceptance probabilities (user types, inconvenience weights, and satisfaction) is presented in Section~5.

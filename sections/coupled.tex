@@ -128,7 +128,7 @@ same net cost \eqref{eq:oracle} optimized by the oracle, now over the
 decomposed policies:
 \begin{equation}\label{eq:J}
 \begin{aligned}
-J = \mathbb{E}_{\psi}\Bigl[\, &\sum_{t \in \Tset} g_t + \wdr{}\,\pmax - \sum_{d} \Cinc{d} + \sum_{d} \Cpen{d} + \Ksoc \sum_{v,k} \zund{k}{v}\\ &+ \Kbatt \sum_{v,t} \qdis{t}{v} + \sum_{v,k} \bigl(\alpha\,\Uflex(\theta_v) + \Ubuf(v,k)\bigr)
+J = \mathbb{E}_{\psi}\Bigl[\, &\sum_{t \in \Tset} g_t + \wdr{}\,\pmax - \sum_{d} \Cinc{d} + \sum_{d} \Cpen{d} + \Ksoc \sum_{v,k} \zund{k}{v}\\ &+ \Kbatt \sum_{v,t} \qdis{t}{v} + \sum_{v,k} \bigl(\alpha\,\Uflex(\theta_v) + \Ubuf(v,k) + \Udc(v,k)\bigr)
 - \sum_{v,k} \pbank{v}{k}\,\banked{v}{k}
 \Bigr].
 \end{aligned}
@@ -137,9 +137,68 @@ which is the $J$ appearing in the oracle \eqref{eq:oracle} and in every
 sub-problem objective of Section~\ref{sec:formulation}. The capacity
 payment and the banking settlement enter with negative signs (revenue),
 the violation penalty and the user payments with positive signs (cost);
-the payments $\alpha\Uflex+\Ubuf$ and the settlement $\pbank{v}{k}\banked{v}{k}$
+the payments $\alpha\Uflex+\Ubuf+\Udc$ and the settlement $\pbank{v}{k}\banked{v}{k}$
 are transfers between building and users and are part of the objective
 by construction.
+
+\paragraph{Who pays what.} Tables~\ref{tab:bldgcost} and~\ref{tab:usercost}
+name every term of the net cost by the party that bears it, the rate that
+governs it, and when it is triggered. The building's ledger
+(Table~\ref{tab:bldgcost}) is exactly \eqref{eq:J}: grid charges and the
+violation penalty are costs, the capacity payment and the banking
+settlement are revenue, and the four user-facing terms are the price of
+the flexibility it uses. The user's ledger (Table~\ref{tab:usercost}) is
+exactly \eqref{eq:usercost} together with the reject-all outside option:
+a driver pays only for energy and for banked excess, is credited for
+flexibility and for realized discharge, and is never left worse off than
+charging externally \eqref{eq:ir}. Each incentive is a building-to-user
+transfer; the banking settlement is the sole user-to-building transfer
+beyond the energy bill, and it is zero exactly when the building wants the
+buffer (Section~\ref{sec:formulation}).
+
+\begin{table*}[t]
+\centering\tablesize
+\caption{Building ledger: every term of the net cost \eqref{eq:J}, its
+direction, rate, and trigger. Revenue terms carry a negative sign in $J$.}
+\label{tab:bldgcost}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Term & Dir. & Rate & Trigger \\
+\midrule
+Energy $g_t$ & cost & $\we{t}$ & every kWh (load + EV) \\
+Demand charge & cost & $\wdr{}\,\pmax$ & billing-cycle peak \\
+FSL penalty $\Cpen{d}$ & cost & $\Kfsl$ & kWh above $\FSL_d$ in event \\
+Unmet floor $\zund{k}{v}$ & cost & $\Ksoc$ & departs below $\Eneg$ \\
+Degradation $\qdis{t}{v}$ & cost & $\Kbatt$ & any V2B discharge \\
+Flexibility $\alpha\Uflex$ & pays user & $\alpha$-share & accepted deviation \\
+Buffer $\Ubuf$ & pays user & replay & event-day discharge \\
+Peak-share $\Udc$ & pays user & replay & discharge shaves peak \\
+Capacity $\Cinc{d}$ & revenue & $\winc$ & per committed event day \\
+Banking $\pbank{v}{k}\banked{v}{k}$ & revenue & $\pbank{v}{k}$ & excess banked \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table*}[t]
+\centering\tablesize
+\caption{User ledger for session $k$: the terms of \eqref{eq:usercost}
+plus the outside option. Credits are building-to-user; the energy and
+banking terms are the only user-to-building payments.}
+\label{tab:usercost}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Term & Dir. & Rate & Trigger \\
+\midrule
+Charging energy & pays bldg. & $\we{t}$ & kWh delivered \\
+Excess banking & pays bldg. & $\pbank{v}{k}$ & banked above floor \\
+Flexibility & credit & $\alpha\Uflex$ & accepted deviation \\
+Buffer & credit & $\Ubuf$ & event-day discharge \\
+Peak-share & credit & $\Udc$ & peak shaved (any day) \\
+Inconvenience $I^v_k$ & felt & --- & sets accept threshold \eqref{eq:ir} \\
+External charging & outside & $\wext$ & reject-all (price floor) \\
+\bottomrule
+\end{tabular}
+\end{table*}
 
 \paragraph{Information structure.} Within a day (the FSL is committed
 per day; Remark~\ref{rem:program}), information flows one way:

@@ -1,0 +1,40 @@
+% Stage-1 commitment optimizes by simulating Stage-2 recourse over sampled
+% populations: users enter first as model draws, then as real arrivals.
+% Single-column figure for the approach section.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  every node/.style={transform shape},
+  stg/.style={rectangle, rounded corners=3pt, draw=black!55, thick,
+              align=left, inner sep=6pt, text width=0.40\textwidth},
+  dep/.style={-{Latex[length=2mm]}, very thick, black!75},
+  lo/.style={-{Latex[length=1.8mm]}, thick, black!55, densely dashed}
+]
+\node[stg, fill=blue!5] (s1) {%
+{\bfseries Stage 1: commit $\FSL_d$ (end of $d{-}1$)}\\[2pt]
+score candidate commitments by \emph{simulating the day below} on
+populations sampled from $\psihat$; keep the $\varepsilon$-feasible set,
+pick depth $\lambda$.\\[2pt]
+{\scriptsize\itshape users enter here only as sampled draws}};
+
+\node[stg, fill=teal!6, below=0.9cm of s1] (s2) {%
+{\bfseries Stage 2: the operating day (recourse)}\\[2pt]
+real arrivals negotiate under the committed $\FSL_d$; charging banks,
+delivers, and settles on realized quantities.\\[2pt]
+{\scriptsize\itshape the same machinery Stage 1 simulated, now on real users}};
+
+\draw[dep] (s1) -- (s2) node[midway, right=2pt, font=\scriptsize\itshape, text=black!60]{commit, then face the day};
+
+\draw[lo] (s1.west) ++(-0.05,0) arc[start angle=-60, end angle=240, radius=0.28]
+  node[left=6pt, font=\scriptsize\itshape, text=black!60, align=right]{simulate\\per sample};
+\end{tikzpicture}
+\caption{The commitment is chosen by rehearsing its own consequences: Stage 1
+scores each candidate $\FSL_d$ by running the Stage-2 negotiation and
+charging machinery on populations sampled from the forecast, then commits;
+on the day itself the identical machinery runs on the real arrivals. Users
+appear twice, first as model draws inside the rehearsal, then as arriving
+negotiators, which is what makes the commitment feasible before its
+resource exists.}
+\label{fig:twostage}
+\end{figure}
