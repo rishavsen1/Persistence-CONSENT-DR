@@ -75,6 +75,15 @@ $\Ubuf(v,k)$ & ex post buffer contribution by replay, Eq.~\eqref{eq:ubuf} \\
 $\ucost{k}{v}$ & user cost, Eq.~\eqref{eq:usercost} \\
 $J$ & building expected net cost, Eq.~\eqref{eq:J} \\
 $\Omeps(\buffhat{d})$ & $\varepsilon$-feasible commitment set, Eq.~\eqref{eq:pledgeset} \\
+\midrule
+\multicolumn{2}{@{}l}{\textit{Banking price, targets, guarantees}} \\
+$\pbank{v}{k}$ & banking rate on departing excess (\$/kWh), Eq.~\eqref{eq:pbank} \\
+$\cmarg{v}$, $\DCmarg$ & forecast next-session marginal cost; demand-charge marginal \\
+$\muDR$ & event value per kWh of survived buffer (recourse dual) \\
+$\etarget{v}$, $\Kbank{v}$, $\bshort{v}$ & terminal banking target; its reward weight; shortfall, Eq.~\eqref{eq:bshort} \\
+$\Nexc$ & event-window exceedance-step count under the optimized recourse \\
+$\Fsafe$ & demand-charge guardrail on the commitment, Prop.~\ref{prop:guardrail} \\
+$\epsIC{v}{d}$ & incentive-compatibility slack of user $v$ on day $d$ \\
 \bottomrule
 \end{tabular}
 \end{table*}

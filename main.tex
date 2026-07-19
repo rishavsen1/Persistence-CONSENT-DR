@@ -13,6 +13,7 @@
 \newtheorem{assumption}{Assumption}
 \newtheorem{remark}{Remark}
 \newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
 \newtheorem{theorem}{Theorem}
  
 \usepackage{amsmath, amssymb, bm}
@@ -41,7 +42,7 @@
 \newcommand{\tablesize}{\small}
 
 \pdfinfo{
-/Title (Two-Layer MILP Formulation for Multi-Building Energy Management)
+/Title (P-CONSENT: Committed Demand Response Backed by a Persistent, Negotiated EV Fleet)
 /Author ()
 }
 
@@ -127,6 +128,17 @@
 \newcommand{\Cinc}[1]{C_{#1}^{\mathrm{inc}}} % capacity payment
 \newcommand{\Cpen}[1]{C_{#1}^{\mathrm{pen}}} % violation penalty
 % --- Negotiation, payments, decisions
+% --- Banking price, targets, guarantees (notation freeze) ---
+\newcommand{\pbank}[2]{p^{\mathrm{bank}}_{#1,#2}}  % banking price for user #1, session #2 ($/kWh)
+\newcommand{\cmarg}[1]{\hat{c}^{\,\mathrm{next}}_{#1}} % forecast next-session marginal supply cost
+\newcommand{\DCmarg}{\Delta^{\mathrm{DC}}}          % demand-charge marginal of banking
+\newcommand{\muDR}{\mu^{\mathrm{DR}}}               % event-value dual: $ per kWh of survived buffer
+\newcommand{\etarget}[1]{E^{\mathrm{tgt}}_{#1}}     % terminal banking target of user #1 (kWh)
+\newcommand{\Kbank}[1]{K^{\mathrm{bank}}_{#1}}      % terminal-shortfall reward weight of user #1
+\newcommand{\bshort}[1]{\beta_{#1}}                 % banking shortfall of user #1 (kWh)
+\newcommand{\Nexc}{N^{\star}}                       % exceedance-step count under optimized recourse
+\newcommand{\Fsafe}{\FSL^{\mathrm{safe}}}           % demand-charge guardrail on the FSL
+\newcommand{\epsIC}[2]{\varepsilon^{#1}_{#2}}       % IC slack of user #1 on day #2
 \newcommand{\Umu}[1]{U(#1)}                  % marginal utility [CONSENT]
 \newcommand{\gch}[2]{g_{#1}^{#2}}            % energy charged
 \newcommand{\ucost}[2]{\zeta_{#1}^{#2}}      % user daily cost
@@ -150,6 +162,7 @@
 \input{sections/related_work}
 \input{sections/formulation}
 \input{sections/coupled}
+\input{sections/guarantees}
 \input{sections/approach}
 
 \bibliographystyle{aaai}

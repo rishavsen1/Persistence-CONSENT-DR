@@ -1,0 +1,318 @@
+\section{Guarantees}\label{sec:guarantees}
+
+This section states which of CONSENT's guarantees transfer unchanged,
+which require restatement under persistence and the committed FSL, and
+what is newly provable about the commitment itself. Throughout, $J_d$
+denotes the day-$d$ building cost under the charging policy of
+Section~\ref{sec:charging}, inclusive of the FSL terms \eqref{eq:dr}
+when an event is active, and $\theta_v$, $\bm{\theta}_{\setminus v}$
+are as in \eqref{eq:uflex}.
+
+\subsection{Standing assumptions}
+
+\begin{assumption}[Fixed assignment]\label{as:assign}
+The charger assignment $\assign$ is fixed at arrival for the entire
+session (Section~\ref{sec:specs}); a report does not alter the
+assignment of any other user.
+\end{assumption}
+
+\begin{assumption}[Oblivious users]\label{as:oblivious}
+Users best-respond to the posted menu of the current session, taking
+the forecast model $\psihat$ and the choices of others as exogenous;
+they do not act to manipulate the system's future state or its learned
+forecasts. This is the mechanism-side counterpart of the physical
+exogeneity already assumed of arrivals and off-site usage
+(Assumption~\ref{as:exo}).
+\end{assumption}
+
+\begin{assumption}[Controller-set banking]\label{as:bankctrl}
+The banked amount and its timing are controller decisions; the user's
+only banking action is the binary consent $\accept{v}{k}$
+(Section~\ref{sec:negotiation}).
+\end{assumption}
+
+\begin{assumption}[Effective floor]\label{as:floor}
+$\Ksoc$ is large enough that the negotiated floor \eqref{eq:floor}
+binds as a hard service constraint at the negotiated departure.
+\end{assumption}
+
+\subsection{Incentive compatibility under persistence and DR}
+
+The single-shot strategy-proofness of CONSENT does not survive
+persistence unqualified: a returning user's valuation of departure SoC
+includes the shadow value of charge carried to the next session, a
+quantity the single-day mechanism neither elicits nor prices. The
+banking rate \eqref{eq:pbank} restores the guarantee up to a forecast
+error, and the DR layer adds no new deviation because no user-facing
+quantity depends on a user's report of event-related information.
+
+\begin{lemma}[Objective-agnostic monotonicity]\label{lem:setincl}
+Let $X(\theta_v)$ be the feasible action set of the day-$d$ charging
+problem given $v$'s report, and let $G$ be any cost functional. If
+$X(\bar\theta_v) \subseteq X(\theta_v)$, then
+$\min_{x \in X(\bar\theta_v)} G(x) \ge \min_{x \in X(\theta_v)} G(x)$.
+\end{lemma}
+
+\begin{proof}
+A minimum over a subset is no smaller than the minimum over the
+superset.
+\end{proof}
+
+The lemma is what makes the incentive argument survive every change of
+objective in this paper, including the FSL penalty: the proof of
+CONSENT's Theorem~1 uses only feasible-set inclusion, never the form of
+the cost.
+
+\begin{theorem}[Periodic ex-post IC up to forecast error]\label{thm:ic}
+Under Assumptions~\ref{as:assign}--\ref{as:floor}, on every day $d$,
+for every history and every realization of
+$\bm{\theta}_{\setminus v}$, a user cannot gain more than
+$\epsIC{v}{d}$ by misreporting an earlier departure time or a higher
+required SoC:
+\[
+\Uflex(\theta_v) \;\ge\; \Uflex(\bar\theta_v) \;-\; \epsIC{v}{d},
+\qquad
+\epsIC{v}{d} \;=\; \bigl(c^{\mathrm{next}}_{v} -
+\cmarg{v}\bigr)^{+}\, \banked{v}{k},
+\]
+where $c^{\mathrm{next}}_{v}$ is the realized next-session marginal
+cost. If forecasts are exact, the mechanism is exactly periodic
+ex-post IC; if additionally $v$ has a single session, the statement
+reduces to CONSENT's Theorem~1.
+\end{theorem}
+
+\begin{proof}
+\emph{Step 1 (report channel).} Reporting
+$\bar{t}_{\mathrm{req}} < \treq$ requires any feasible schedule to set
+$\rate{t}{v} = 0$ after $\bar{t}_{\mathrm{req}}$ and to satisfy the
+floor by $\bar{t}_{\mathrm{req}}$; every such schedule is feasible
+under the true report (Assumption~\ref{as:assign} rules out
+reassignment effects). Reporting $\bar{E}_{\mathrm{req}} > \Ereq$
+intersects the feasible set with a smaller terminal set
+(Assumption~\ref{as:floor}). In both cases
+$X(\bar\theta_v) \subseteq X(\theta_v)$. The day-$d$ cost, with or
+without the event terms \eqref{eq:dr}, is a fixed functional of the
+action because $\FSL_d$ was committed before any arrival. By
+Lemma~\ref{lem:setincl}, for every realization and every sampled
+scenario,
+$J_d(\bm{\theta}_{\setminus v}, \bar\theta_v) \ge
+ J_d(\bm{\theta}_{\setminus v}, \theta_v)$.
+Since the leave-out term
+$J_d(\bm{\theta}_{\setminus v})$ in \eqref{eq:uflex} is common,
+$\Uflex(\theta_v) \ge \Uflex(\bar\theta_v)$ pointwise.
+
+\emph{Step 2 (banking channel).} By
+Assumption~\ref{as:bankctrl} the only remaining action is
+$\accept{v}{k}$. The gain from consenting with departing excess
+$\banked{v}{k}$ is
+\[
+c^{\mathrm{next}}_{v}\,\banked{v}{k} - \pbank{v}{k}\,\banked{v}{k}
+\;\le\; \bigl(c^{\mathrm{next}}_{v} - \max(\bar{w}^{e}_{k},
+\cmarg{v})\bigr)\,\banked{v}{k}
+\;\le\; \epsIC{v}{d},
+\]
+using \eqref{eq:pbank} with $\muDR = 0$ on ordinary days (on
+pre-event days the subsidy $\muDR\rhohat_v$ is a deliberate transfer
+for buffer the building recovers in the event window, and the same
+bound applies to the residual). The $\Ubuf$ payment cannot be inflated
+by any report: it is settled ex post by replay \eqref{eq:ubuf} on
+realized quantities only.
+
+\emph{Step 3 (no DR channel).} The user's action set contains no
+event-indexed report and no quantity on which $\FSL_d$, $\winc$, or
+$\Kfsl$ conditions; the DR layer alters only the coefficients of the
+day-$d$ cost, already covered by Step~1. Under
+Assumption~\ref{as:oblivious} no strategy conditions on $\psihat$.
+Combining Steps~1--2 gives the claim.
+\end{proof}
+
+\begin{remark}
+The guarantee is deliberately weaker than dominant-strategy: once
+private information evolves across sessions, periodic ex-post IC up to
+a model-error term is the strongest notion attainable without full
+dynamic-mechanism machinery, and $\epsIC{v}{d}$ is empirically
+reportable from the forecast diagnostics of Section~6.
+\end{remark}
+
+\subsection{Budget feasibility and participation}
+
+\begin{theorem}[Per-day budget feasibility of flexibility
+payments]\label{thm:bf}
+With $\ucost{k}{v}$ as in \eqref{eq:usercost} and
+$\alpha \in [0,1]$: (i) whenever $\Uflex(\theta_v) \ge 0$, serving $v$
+at the negotiated terms costs the building no more than excluding $v$,
+on event and non-event days alike; (ii) in aggregate,
+$\mathbb{E}\bigl[\sum_{v} \alpha\,\Uflex(\theta_v)\bigr] \le
+\mathbb{E}\bigl[J_d(\emptyset) - J_d(\bm{\theta})\bigr]$, i.e., total
+flexibility payments never exceed total expected savings.
+\end{theorem}
+
+\begin{proof}
+(i) The building's day-$d$ ledger with $v$ satisfies
+$J_d(\bm{\theta}_{\setminus v}, \theta_v) + \alpha\,\Uflex(\theta_v)
+\le J_d(\bm{\theta}_{\setminus v}, \theta_v) + \Uflex(\theta_v) =
+J_d(\bm{\theta}_{\setminus v})$ by \eqref{eq:uflex}. The capacity
+payment $\Cinc{d}$ is fixed by $\FSL_d$ and cancels between the two
+sides; $v$'s event-day contribution enters $\Uflex$ only through
+penalty reduction, a genuine saving, so the inequality holds per day.
+(ii) $\Uflex$ is computed sequentially at each arrival, conditional on
+realized predecessors and in expectation over successors; by the tower
+property the sum telescopes,
+$\mathbb{E}[\sum_v \Uflex] = \mathbb{E}[J_d(\emptyset) -
+J_d(\bm{\theta})]$, and $\alpha \le 1$ gives the bound. The
+telescoping is what rescues the aggregate from the usual objection
+that marginal values need not sum to the total.
+\end{proof}
+
+\begin{lemma}[Budget feasibility of replay payments]\label{lem:replaybf}
+Let $\Ubuf(v,k)$ be the replay marginal \eqref{eq:ubuf} and let the
+paid amount be the capped marginal of
+Section~\ref{sec:negotiation}. Then
+$\sum_{v} \text{paid}(v) \le J^{\mathrm{re}}_d(\emptyset) -
+J^{\mathrm{re}}_d(\buff{d})$: buffer payments never exceed the
+realized saving the buffer produced. If $J^{\mathrm{re}}_d$ is
+submodular in the buffer set, the cap never binds and full marginals
+are paid.
+\end{lemma}
+
+\begin{proof}
+The proportional-share cap allocates exactly the realized total saving,
+so the capped sum cannot exceed it. Under submodularity, marginal
+contributions of a set of resources under-sum the total saving, so
+each plain marginal is below its proportional counterpart's aggregate
+constraint and the $\min$ selects the marginal. Substitutability of
+buffers shaving a common peak is the submodular case; complementary
+buffers are exactly where the cap binds.
+\end{proof}
+
+Voluntary participation transfers unchanged: the reject-all option and
+the binary banking consent bound every user's exposure by the external
+rate $\wext$, per session, and event days only enlarge $\Uflex$ at
+fixed $\alpha$, weakly improving every offered option.
+
+\subsection{The commitment: optimality anchor and guardrail}
+
+\begin{proposition}[Newsvendor characterization of the risk-neutral
+commitment]\label{prop:newsvendor}
+Consider the LP relaxation of the day-$d$ delivery problem and let
+$Q(\FSL, \omega)$ be its optimal cost in scenario $\omega$, inclusive
+of \eqref{eq:dr}. Then $Q(\cdot, \omega)$ is convex, and the
+risk-neutral commitment $\FSL^{\star} = \arg\min_{\FSL}
+\bigl\{-\winc(\Phist - \FSL) + \mathbb{E}[Q(\FSL,\omega)]\bigr\}$
+satisfies, in subdifferential form,
+\[
+\winc \;\in\; \Kfsl\,\dt\; \mathbb{E}_{\omega}\bigl[\,
+\Nexc(\FSL^{\star}, \omega)\,\bigr],
+\]
+where $\Nexc(\FSL,\omega) = |\{t \in \evwin{d} :
+\Ptot{t}(x^{\star}(\FSL,\omega)) > \FSL\}|$ counts exceedance steps
+under the optimized recourse. The certain per-kW capacity rate equals
+the expected marginal penalty over exceedance steps; the cost of
+procuring user flexibility shapes the condition only through the
+distribution of $\Nexc$, not additively, because the program imposes a
+soft penalty rather than a hard cap.
+\end{proposition}
+
+\begin{proof}
+$\Ptot{t}(x)$ is affine in the rates, so $(\Ptot{t}(x) - \FSL)^{+}$ is
+jointly convex in $(x, \FSL)$; the remaining cost is convex in $x$
+under the LP relaxation; partial minimization over $x$ preserves joint
+convexity, so $Q(\cdot,\omega)$ is convex, and so is the bid objective
+after adding the affine revenue term. By Danskin's theorem,
+$\partial_{\FSL} Q(\FSL,\omega) \ni -\Kfsl\,\dt\,\Nexc(\FSL,\omega)$
+almost everywhere (at ties, the convex hull over optimizers).
+Stationarity of the bid objective yields the displayed condition;
+convexity makes it globally sufficient. Sanity: with
+$\winc/(\Kfsl\,\dt)$ exceedance steps tolerated at the optimum, an
+interior solution exists whenever this ratio is below
+$|\evwin{d}|$, which holds at the program rates and a $4$--$5$\,h
+window.
+\end{proof}
+
+\begin{remark}[MILP caveat]\label{rem:milp}
+The value function of the mixed-integer delivery problem is not convex
+in $\FSL$ in general; Proposition~\ref{prop:newsvendor} is stated for
+the LP relaxation, and convexity of the integer value over the
+operating range of $\FSL$ is verified numerically in Section~7. The
+depth $\lambda^{\star}$ implied by $\FSL^{\star}$ through
+\eqref{eq:pledgedepth} anchors the deployed pair
+$(\lambda, \varepsilon)$: operating at $\lambda < \lambda^{\star}$ is
+priced risk aversion.
+\end{remark}
+
+\begin{proposition}[Demand-charge guardrail]\label{prop:guardrail}
+Let $R_d$ be the total EV energy that must be delivered on event day
+$d$, let
+$E_{\mathrm{win}}(\FSL) = \dt \sum_{t \in \evwin{d}}
+(\FSL - \bload{t})^{+}$
+be the maximum EV energy deliverable inside the window at zero
+penalty, and let
+$C_{\mathrm{out}} = \dt \sum_{t \notin \evwin{d}}
+\min\bigl(r^{\mathrm{cap}}_t,\ (\pmaxpast - \bload{t})^{+}\bigr)$
+be the energy deliverable outside the window without raising the
+billing-cycle peak, where $r^{\mathrm{cap}}_t$ aggregates assigned
+charger limits. If $R_d - E_{\mathrm{win}}(\FSL) \le
+C_{\mathrm{out}}$, a zero-penalty schedule exists that does not raise
+the monthly peak. Since $E_{\mathrm{win}}$ is non-decreasing,
+$\Fsafe = \min\{\FSL \ge 0 : R_d - E_{\mathrm{win}}(\FSL) \le
+C_{\mathrm{out}}\}$
+is well defined, and any commitment $\FSL_d \ge \Fsafe$ avoids the
+conflict between the commitment and the demand charge
+deterministically.
+\end{proposition}
+
+\begin{proof}
+A zero-penalty schedule delivers at most $E_{\mathrm{win}}(\FSL)$
+inside the window, so at least $R_d - E_{\mathrm{win}}(\FSL)$ must
+move outside; $C_{\mathrm{out}}$ is exactly the out-of-window capacity
+available under the ceiling $\pmaxpast$ and the charger limits, and
+feasibility of the split follows by filling out-of-window steps
+greedily up to their individual caps (supply at least demand with
+per-step capacities). Monotonicity of $E_{\mathrm{win}}$ is
+term-by-term.
+\end{proof}
+
+Committing below $\Fsafe$ is not forbidden; it is the regime in which
+the expected capacity gain of Proposition~\ref{prop:newsvendor} must
+be weighed against a certain demand-charge increment, a one-line
+comparison once both are computed.
+
+\subsection{Conditional temporal decomposition}
+
+\begin{theorem}[Decomposition within the target-coupled policy
+class]\label{thm:decomp}
+Let $\sigma_d = (\pmaxpast, \{\Earr(v,k_d)\}_{v})$ and let
+$\Pi_{\mathrm{CE}}$ be the class of policies consisting of per-day
+charging and negotiation policies together with the terminal targets
+$\{\etarget{v}\}$ of \eqref{eq:bshort}. Then: (a) $\sigma_d$ is a
+sufficient statistic for the past; (b) within $\Pi_{\mathrm{CE}}$, the
+billing-cycle problem separates into per-day problems coupled only
+through $\sigma_d$, the demand charge decomposing as a maximum over
+days exactly as in the non-persistent case; (c) the optimality gap of
+$\Pi_{\mathrm{CE}}$ relative to unrestricted policies is nonnegative
+and vanishes when $\psihat$ is exact, and it is the value of closed-loop
+revision of the targets otherwise.
+\end{theorem}
+
+\begin{proof}
+(a) The exogenous processes are independent of control by assumption
+(Section~\ref{sec:specs}); the only controlled quantities that persist
+across a day boundary are the running peak and the persistent SoC,
+both carried in $\sigma_d$. (b) The billing-cycle maximum over
+disjoint daily step sets equals the maximum of daily maxima, carried
+by $\pmaxpast$. Within $\Pi_{\mathrm{CE}}$, day $d{-}1$ influences day
+$d$ only through $\Edep(v, k_{d-1})$, which the terminal reward
+controls; conditional on realized $\sigma_d$, the day-$d$ problem
+shares no decision variable with any other day. (c) With $\psihat$
+exact, the commitment layer's recourse computes the true event-day
+problem; setting $\etarget{v}$ to its optimal pre-event departure SoC
+and $\Kbank{v}$ large reproduces the unrestricted optimum by
+concatenation, so the gap vanishes. In general the gap is the
+certainty-equivalence loss of freezing the targets a day ahead, which
+Section~7 reports numerically.
+\end{proof}
+
+The theorem scopes precisely what the architecture assumes: the
+cross-day coupling is summarized by one scalar target per user, and
+the price of that summary is a measurable certainty-equivalence gap,
+not a hidden approximation.

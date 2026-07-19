@@ -77,7 +77,7 @@ where the delivery risk level $\varepsilon$ is the operator's tolerance for viol
 \FSL_d(\lambda) \;=\; \Phist - \lambda\,\bigl(\Phist -
 \min \Omeps(\buffhat{d})\bigr),
 \end{equation}
-interpolating between the null commitment $\FSL_d = \Phist$ (zero revenue, zero risk) and the deepest commitment feasible at risk level $\varepsilon$. The probability in \eqref{eq:pledgeset} is evaluated by sample average approximation: candidate values are scored by simulating delivery (the charging sub-problem of Section~\ref{sec:charging}) over scenarios drawn from $\psihat$, not in closed form. Because $\varepsilon$ hedges sampled randomness while $\lambda$ hedges error in $\psihat$ itself, the pair $(\lambda, \varepsilon)$ is treated as a first-class operating parameter and its revenue--penalty trade-off is characterized in Section~7.
+interpolating between the null commitment $\FSL_d = \Phist$ (zero revenue, zero risk) and the deepest commitment feasible at risk level $\varepsilon$. The probability in \eqref{eq:pledgeset} is evaluated by sample average approximation: candidate values are scored by simulating delivery (the charging sub-problem of Section~\ref{sec:charging}) over scenarios drawn from $\psihat$, not in closed form. Because $\varepsilon$ hedges sampled randomness while $\lambda$ hedges error in $\psihat$ itself, the pair $(\lambda, \varepsilon)$ is treated as a first-class operating parameter and its revenue--penalty trade-off is characterized in Section~7. Two remarks fix the interpretation. First, the program itself imposes no hard cap: exceeding the FSL is penalized at $\Kfsl$ per kWh, not forbidden, so \eqref{eq:pledgeset} is a \emph{self-imposed risk policy} layered over a soft-penalty program, not a program constraint. Second, the depth $\lambda$ has a risk-neutral anchor: Proposition~\ref{prop:newsvendor} shows the risk-neutral optimal commitment satisfies a newsvendor-type condition equating the certain per-kW capacity rate with the expected marginal penalty over event-window exceedance steps, so operating at $\lambda < \lambda^{\star}$ is priced risk aversion rather than an ad hoc choice.
 
 The set $\Omeps$ formalizes the central structural claim of the architecture: a larger forecast buffer weakly enlarges the set of deliverable commitments, so persistence-aware over-charging expands the capacity the building can sell upstream.
 
@@ -109,8 +109,35 @@ where $\Eneg(v,k) \le \Ereq(v,k)$ is the negotiated floor (Section~\ref{sec:nego
 \end{equation}
 with slack penalized at $\Kfsl$ through \eqref{eq:dr}. On event days the controller may discharge any EV down to $\Emin(v)$, drawing on energy above the floor, provided \eqref{eq:floor} is restored by the negotiated departure; the floor constrains the departure state, not the trajectory.
 
-\paragraph{Over-charging into headroom.} On off-peak days the controller
-may charge a consenting user above the negotiated floor, but only into available headroom: over-charge is permitted at step $t$ only while $\Ptot{t}$ remains below the estimated peak $\Pmaxhat$ (and below the event cap when one is active), so that banking energy never creates a new peak or an FSL violation. This is the proactive-charging mechanism of P-V2B, with the FSL acting as an additional cap.
+\paragraph{Over-charging: target pull under a headroom cap.} Banking is
+governed by two composed rules. The \emph{pull} is a per-user terminal
+target $\etarget{v}$ (kWh), set by the commitment layer from the
+forecast value of buffer on the following day; the charging objective
+receives a one-sided terminal reward on the shortfall
+\begin{equation}\label{eq:bshort}
+\bshort{v} \;\ge\; \etarget{v} - \Edep(v,k), \qquad \bshort{v} \ge 0,
+\qquad \etarget{v} \le \Emax(v),
+\end{equation}
+weighted by $\Kbank{v} = \hat{P}(\mathrm{return}_v)\cdot\muDR$, where
+$\hat{P}(\mathrm{return}_v)$ is the forecast return probability and
+$\muDR$ is the expected event value per kWh of survived buffer,
+obtained as the dual of the event-window delivery requirement in the
+commitment layer's recourse simulation. Only under-banking is
+penalized; over-banking is naturally discouraged by the demand-cost and
+degradation terms. The \emph{push cap} is the headroom rule of P-V2B:
+over-charge power is admitted at step $t$ only while $\Ptot{t}$ remains
+below the estimated peak $\Pmaxhat$ (and below the event cap when one
+is active), so banking never creates a new peak or an FSL violation.
+The target determines \emph{how much} buffer the building wants; the
+headroom cap determines \emph{when} building it is physically and
+economically admissible. When no event is anticipated, $\muDR = 0$ and
+$\Kbank{v} = 0$, and the scheme reduces exactly to the opportunistic
+headroom rule of P-V2B, which is thus the null-commitment special case.
+If headroom is insufficient to reach the target, the shortfall
+$\bshort{v} > 0$ propagates to a smaller forecast buffer $\buffhat{d}$,
+and the commitment layer commits shallower through
+\eqref{eq:pledgeset}; the composition degrades gracefully rather than
+forcing delivery.
 
 \paragraph{Buffer accounting.} The banked excess at departure from
 session $k$ is
@@ -140,9 +167,11 @@ penalty:
 \begin{multline}\label{eq:chobj}
 \min_{\{\act{t}\}} \;
 \mathbb{E}_{\psihat}\Bigl[\sum_{t} g_t + \wdr{}\,\pmax
-+ \Ksoc \sum_{v} \zund{k}{v} + \Kbatt \sum_{v,t} \qdis{t}{v}\\ + \Kfsl \sum_{t \in \evwin{d}} \vio{t}\,\dt \Bigr]
++ \Ksoc \sum_{v} \zund{k}{v} + \Kbatt \sum_{v,t} \qdis{t}{v}\\ + \Kfsl \sum_{t \in \evwin{d}} \vio{t}\,\dt
++ \sum_{v} \Kbank{v}\,\bshort{v} \Bigr]
 \end{multline}
-subject to \eqref{eq:socbounds}--\eqref{eq:fslslack} and the headroom rule.
+subject to \eqref{eq:socbounds}--\eqref{eq:fslslack}, the terminal-target
+accounting \eqref{eq:bshort}, and the headroom cap.
 
 \subsection{The Negotiation Sub-Problem ($\Pneg$)}\label{sec:negotiation}
 
@@ -151,8 +180,39 @@ the observed arrival data and the negotiated departure SoC and time. Flexibility
 \zeta_l)$, together with a reject-all choice priced at the external rate
 $\wext$. The floor may be reduced only through the user's voluntary, compensated agreement.
 
-\paragraph{Over-charge offer and acceptance.} Independently of the
-chosen level, the user may accept or decline a cost-free over-charge above the negotiated floor, recorded by $\accept{v}{k} \in \{0,1\}$; the banked energy is a no-cost buffer the driver may use before departure, and it carries over by \eqref{eq:carryover}. The formulation treats acceptance as binary and per-session; the main experiments assume every offer is accepted ($\accept{v}{k} \equiv 1$), stated explicitly, with the acceptance-rate sensitivity deferred to the behavioral model of Section~5.
+\paragraph{Over-charge offer, consent, and the banking price.}
+Independently of the chosen level, the user may consent to, or decline,
+over-charge above the negotiated floor, recorded by $\accept{v}{k} \in
+\{0,1\}$. Consent is the user's \emph{only} banking decision: the
+amount and timing are controller decisions (the target and headroom
+rules of Section~\ref{sec:charging}), which removes any reportable
+banking quantity from the user's strategy space. The departing excess
+$\banked{v}{k}$ is priced at the banking rate
+\begin{equation}\label{eq:pbank}
+\pbank{v}{k} \;=\; \Bigl[\max\bigl(\bar{w}^{e}_{k},\; \cmarg{v}\bigr)
++ \DCmarg \;-\; \muDR\,\rhohat_v\Bigr]^{+},
+\end{equation}
+where $\bar{w}^{e}_{k}$ is the mean energy price paid for the banked
+tranche, $\cmarg{v}$ is the forecast marginal supply cost of the same
+energy at $v$'s next session, $\DCmarg \ge 0$ is the demand-charge
+marginal attributable to the banked charging (zero whenever banking is
+placed strictly below the running peak, which the headroom cap
+enforces), and $\muDR\,\rhohat_v$ is the expected event value of the
+buffer, discounted by $v$'s yield estimate. The structure of
+\eqref{eq:pbank} does two jobs at once. On ordinary days ($\muDR = 0$)
+the $\max$ makes a user indifferent between banking cheap energy today
+and buying it tomorrow, eliminating inter-temporal price arbitrage by
+persistent users; it also closes a free-riding channel that a cost-free
+over-charge would open, in which a user under-reports their required
+SoC, collects the flexibility payment, and is refilled at no cost
+regardless. On days preceding an anticipated event, $\muDR > 0$ drives
+$\pbank{v}{k}$ to zero: the banked energy is free to the user
+\emph{exactly when the building values the buffer}, because the
+building expects to recover its value through event-window discharge.
+The formulation treats consent as binary and per-session; the main
+experiments assume every offer is accepted ($\accept{v}{k} \equiv 1$),
+stated explicitly, with the acceptance-rate sensitivity deferred to the
+behavioral model of Section~5.
 
 \paragraph{Marginal contribution.} The compensation rests on two
 components with different settlement times. The flexibility component is the ex ante expected reduction in building cost enabled by $v$'s negotiated choice, evaluated under the charging constraint set of Section~\ref{sec:charging} (hence under a given $\FSL_d$):
@@ -165,11 +225,22 @@ where $J_d(\cdot)$ is the day-$d$ building cost under $\pich$ and $\bm{\theta}_{
 \Ubuf(v,k) \;=\;
 J^{\mathrm{re}}_d\bigl(\buff{d} \setminus \survived{v}{k}\bigr) - J^{\mathrm{re}}_d\bigl(\buff{d}\bigr),
 \end{equation}
-and $\Ubuf(v,k) = 0$ on sessions overlapping no event. The replay $J^{\mathrm{re}}_d$ is computed by re-solving the day-$d$ charging problem \eqref{eq:chobj} with the realized load, arrivals, choices, and event window all held fixed at their observed values, and with only the charging and discharging rates re-optimized; the two evaluations differ solely in whether $v$'s surviving buffer $\survived{v}{k}$ is available for discharge. Because the realized peak and event slack are recomputed under this re-optimization, and the building cost includes the degradation term $\Kbatt$, the difference \eqref{eq:ubuf} is the true marginal value of $v$'s buffer on that day, automatically net of battery wear; the user never bears wear separately. We use the per-user marginal value rather than a Shapley value: when several users' buffers shave the same peak, the marginal contributions need not sum to the total buffer value, so the building does not over-distribute, and each user is paid no more than the cost they demonstrably avoided. The resulting payments preserve the budget-feasibility guarantee stated in Section~\ref{sec:coupled}.
+and $\Ubuf(v,k) = 0$ on sessions overlapping no event. The replay $J^{\mathrm{re}}_d$ is computed by re-solving the day-$d$ charging problem \eqref{eq:chobj} with the realized load, arrivals, choices, and event window all held fixed at their observed values, and with only the charging and discharging rates re-optimized; the two evaluations differ solely in whether $v$'s surviving buffer $\survived{v}{k}$ is available for discharge. Because the realized peak and event slack are recomputed under this re-optimization, and the building cost includes the degradation term $\Kbatt$, the difference \eqref{eq:ubuf} is the true marginal value of $v$'s buffer on that day, automatically net of battery wear; the user never bears wear separately. We use the per-user marginal value rather than a Shapley value, but the
+aggregate must be handled with care: marginal contributions under-sum
+the total when buffers are substitutes (several buffers shaving the
+same peak, the typical case) yet can \emph{over-sum} it when buffers
+are complements, so paying full marginals is not automatically budget
+feasible. We therefore pay the capped marginal
+$\min\bigl(\Ubuf(v,k),\ \text{proportional share of the total replay
+saving}\bigr)$, which coincides with the plain marginal whenever
+$J^{\mathrm{re}}_d$ is submodular in the buffer set and binds only in
+the complementary case; Lemma~\ref{lem:replaybf} states the resulting
+budget-feasibility guarantee.
 
 \paragraph{User cost.} User $v$'s cost for session $k$ is
 \begin{equation}\label{eq:usercost}
 \ucost{k}{v} \;=\; \sum_{t \in \Tvk} \we{t}\,\gch{t}{v}
-\;-\; \alpha\,\Uflex(\theta_v) \;-\; \Ubuf(v,k),
+\;-\; \alpha\,\Uflex(\theta_v) \;-\; \Ubuf(v,k)
+\;+\; \pbank{v}{k}\,\banked{v}{k},
 \end{equation}
-where $\alpha \in [0,1]$ is the cost-sharing parameter on the flexibility component, and the buffer component is paid in full; a share parameter on $\Ubuf$ analogous to $\alpha$ is possible but fixed to one here. The banked excess itself is provided at no cost: $\banked{v}{k}$ does not appear in \eqref{eq:usercost}. Every term settles on realized quantities; no term depends on a forecast of user $v$'s behavior. The behavioral model mapping options to choice and acceptance probabilities (user types, inconvenience weights, and satisfaction) is presented in Section~5.
+where $\alpha \in [0,1]$ is the cost-sharing parameter on the flexibility component, and the buffer component is paid in full; a share parameter on $\Ubuf$ analogous to $\alpha$ is possible but fixed to one here. The banked excess is settled at the banking rate \eqref{eq:pbank}, which is zero on days preceding anticipated events and at most the avoided next-session cost otherwise, so the user is never charged above their outside procurement cost for banked energy. Every term settles on realized quantities; the single forecast entering a user-facing price is $\cmarg{v}$ inside \eqref{eq:pbank}, and it is a forecast of \emph{prices}, not of user $v$'s behavior. The behavioral model mapping options to choice and acceptance probabilities (user types, inconvenience weights, and satisfaction) is presented in Section~5.
