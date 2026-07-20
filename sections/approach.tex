@@ -27,25 +27,29 @@ is simulated in the trial.
 \caption{$\pidr$: day-ahead commitment by simulated delivery}
 \label{alg:dr}
 \DontPrintSemicolon
-\KwIn{forecast $\psihat$; risk level $\varepsilon$; depth $\lambda$;
-sample count $N$; candidate grid $\mathcal{F} \subseteq [\,\underline{F}, \Phist]$}
-\KwOut{committed $\FSL_d$; terminal targets $\{\etarget{v}\}$}
+\KwIn{forecast $\psihat$; delivery risk level $\varepsilon$; commitment
+depth $\lambda \in [0,1]$; sample count $N$; baseline peak $\Phist$;
+per-vehicle usable maxima $\{E_{\max}(v)\}$; candidate FSL grid
+$\mathcal{F} \subseteq [\,\underline{F}, \Phist]$}
+\KwOut{committed level $\FSL_d$; terminal SoC targets $\{\etarget{v}\}$}
+set $\etarget{v} \leftarrow E_{\max}(v)$ for all $v$
+\tcp*{uniform target allocator (current implementation)}
 Draw $N$ sampled days $\omega_1,\dots,\omega_N \sim \psihat$ (arrivals,
-requirements, off-site use)\;
-\ForEach{candidate $F \in \mathcal{F}$}{
+required SoC, off-site use)\;
+\ForEach{candidate level $F \in \mathcal{F}$}{
   \ForEach{sampled day $\omega_i$}{
     simulate delivering on $F$: run $\pich$ (Alg.~\ref{alg:ch}) under
-    cap $F$ on sampled day $\omega_i$\;
+    cap $F$ with targets $\{\etarget{v}\}$ on sampled day $\omega_i$\;
     $x_i \leftarrow \mathbb{1}[\exists\, t \in \evwin{d}:\ \Ptot{t} > F]$
     \tcp*{joint window exceedance}
   }
-  $\hat{p}(F) \leftarrow \tfrac{1}{N}\sum_i x_i$\;
+  $\hat{p}(F) \leftarrow \tfrac{1}{N}\sum_i x_i$
+  \tcp*{estimated violation probability}
 }
 $\Omeps \leftarrow \{F \in \mathcal{F} : \hat{p}(F) \le \varepsilon\}$
-\tcp*{$\varepsilon$-feasible set}
+\tcp*{$\varepsilon$-feasible commitment set}
 $\FSL_d \leftarrow \Phist - \lambda\,\bigl(\Phist - \min \Omeps\bigr)$
-\tcp*{depth interpolation}
-set $\etarget{v} \leftarrow E_{\max}(v)$ for all $v$ \tcp*{uniform allocator (current implementation)}
+\tcp*{commitment-depth interpolation}
 \Return $\FSL_d,\ \{\etarget{v}\}$\;
 \end{algorithm}
 
@@ -73,17 +77,18 @@ $\Kbank{v}\bshort{v}$ that pulls departures toward $\etarget{v}$.
 \caption{$\pich$: model-predictive charging with banking}
 \label{alg:ch}
 \DontPrintSemicolon
-\KwIn{committed $\FSL_d$; targets $\{\etarget{v}\}$; state at $t$
-(SoC, load, present EVs)}
-\KwOut{control action at $t$; updated dual estimate $\muDR$}
+\KwIn{committed level $\FSL_d$; terminal SoC targets $\{\etarget{v}\}$;
+forecast $\psihat$; estimated peak (headroom boundary) $\Pmaxhat$;
+running cycle peak $\pmaxpast$; state at $t$ (SoC, load, present EVs)}
+\KwOut{control action at $t$; event-value dual estimate $\muDR$}
 \For{each control step $t$}{
   sample $K$ arrival continuations from $\psihat$\;
   solve the fixed-$\FSL_d$ MILP \eqref{eq:chobj} over the horizon
-  (CPLEX), with SoC, floor \eqref{eq:floor}, rate, and soft-cap
-  \eqref{eq:fslslack} constraints\;
+  (CPLEX), with SoC, negotiated-floor \eqref{eq:floor}, rate, and
+  soft-cap \eqref{eq:fslslack} constraints\;
   apply the first-step charge/discharge action\;
-  bank excess only where $\Ptot{t} < \min(\Pmaxhat, \text{cap})$, pulled
-  toward $\etarget{v}$ \tcp*{headroom-push with target-pull}
+  bank excess only where $\Ptot{t} < \min(\Pmaxhat,\, \pmaxpast)$, pulled
+  toward each $\etarget{v}$ \tcp*{headroom-push with target-pull}
   record the dual $\muDR$ of the FSL-delivery requirement\;
 }
 \Return action; $\muDR$\;
@@ -91,10 +96,7 @@ $\Kbank{v}\bshort{v}$ that pulls departures toward $\etarget{v}$.
 
 Two components govern banking. The target-pull, through
 $\Kbank{v}\bshort{v}$, states \emph{how much} buffer the commitment
-layer wants accumulated; the headroom-push cap states \emph{when}
-accumulating it is admissible, admitting charge above immediate need
-only into capacity that lies below the running peak, so banking never
-creates a new demand-charge peak. When no event is anticipated,
+layer wants accumulated; the headroom-push cap states \emph{when} accumulating it is admissible, admitting charge above immediate need only into capacity that lies below both the estimated peak $\Pmaxhat$ and the running cycle peak $\pmaxpast$, so banking never creates a new demand-charge peak. When no event is anticipated,
 $\muDR = 0$ and $\Kbank{v} = 0$, and the composition reduces exactly to
 the opportunistic headroom rule of P-V2B, which is the null-commitment
 special case. The dual $\muDR$ on the FSL-delivery requirement is the shadow price of that requirement: the marginal improvement in the building's objective per additional unit of guaranteed deliverable buffer, and hence the value the banking price passes to the user. A banking offer is quoted at arrival, possibly days before an event, so $\muDR$ at quote time cannot come from that day's operation; it is the \emph{expected} shadow price of delivering on the anticipated event, evaluated under $\psihat$. It is zero when no event is anticipated and positive on pre-event days in proportion to the buffer the building forecasts it will need. Being a forecast quantity, $\muDR$ is the single price-forecast entering any user-facing offer, consistent with the incentive analysis of Section~\ref{sec:guarantees}.
@@ -112,23 +114,27 @@ realized quantities through a single replay of the day.
 \caption{$\pineg$: negotiation at arrival, settlement at departure}
 \label{alg:neg}
 \DontPrintSemicolon
-\KwIn{arrival report $(\Ereq, \treq)$; committed $\FSL_d$; dual $\muDR$;
-yield estimate $\rhohat_v$}
-\KwOut{accepted option or reject-all; user cost $\ucost{k}{v}$}
+\KwIn{arrival report (required SoC $\Ereq$, requested departure
+$\treq$); flexibility menu (option set offered to $v$); committed level
+$\FSL_d$; event-value dual $\muDR$; yield estimate $\rhohat_v$; banking
+prices (mean banked-energy price $\bar{w}^e_k$, forecast next-session
+cost $\cmarg{v}$, demand-charge marginal $\DCmarg$); external rate
+$\wext$}
+\KwOut{accepted option or reject-all; user session cost $\ucost{k}{v}$}
 \tcc{arrival}
-compute $\Uflex$ for each menu option under \eqref{eq:uflex}\;
-form the banking price
-$\pbank{v}{k} = [\max(\bar{w}^e_k, \cmarg{v}) + \DCmarg - \muDR\rhohat_v]^+$
-\eqref{eq:pbank}\;
+compute the flexibility value $\Uflex$ for each menu option under
+\eqref{eq:uflex}\;
+form the banking price \eqref{eq:pbank}\;
+\quad $\pbank{v}{k} = [\max(\bar{w}^e_k, \cmarg{v}) + \DCmarg - \muDR\rhohat_v]^+$\;
 present menu $+$ banking price $+$ reject-all at $\wext$\;
 user selects; if reject-all, charge externally at $\wext$ and exit\;
 \tcc{departure}
 re-solve day $d$ rates-only, with and without $v$'s surviving buffer
 $\survived{v}{k}$\;
-$\Udc(v,k) \leftarrow \wdr{}\,\bigl(\pmaxre(\!\setminus\!v) -
-\pmaxre\bigr)^+$ \tcp*{demand-charge share}
-$\Ubuf(v,k) \leftarrow [\text{replay difference}] - \Udc(v,k)$
-\tcp*{energy+penalty share}
+$\Udc(v,k) \leftarrow \wdr{}\,(\pmaxre(\!\setminus\!v) - \pmaxre)^+$\;
+\quad\tcp*[h]{demand-charge share of the replay}\;
+$\Ubuf(v,k) \leftarrow [\text{replay difference}] - \Udc(v,k)$\;
+\quad\tcp*[h]{energy-plus-penalty share}\;
 settle $\ucost{k}{v}$ \eqref{eq:usercost}, credits capped by the joint
 replay saving\;
 \Return selection; $\ucost{k}{v}$\;
@@ -151,10 +157,7 @@ Lemma~\ref{lem:replaybf} keeps the total within the realized saving.
 The four coupling quantities are the entire interface between policies.
 Within a day the dependence is one-way: $\FSL_d$ and $\etarget{v}$
 constrain and steer $\pich$, whose realized dispatch and dual $\muDR$
-set what $\pineg$ can offer; nothing flows back within the day. Across
-days only the surviving buffer $\buff{d{+}1}$ and the running peak
-enter the next commitment, which is what makes the per-day
-decomposition of Theorem~\ref{thm:decomp} exact within its policy class.
+set what $\pineg$ can offer; nothing flows back within the day. Across days only the surviving buffer $\buff{d{+}1}$ and the running peak enter the next commitment. The terminal target $\etarget{v}$ is precisely the per-user scalar of Theorem~\ref{thm:decomp}'s policy class: carrying the commitment down into charging through this one number per user is what makes the per-day decomposition exact.
 The dominant cost is the model-predictive charging solve: one
 mixed-integer program per control step per sampled continuation, and
 $N$ delivery simulations per candidate level in the day-ahead pass. Both

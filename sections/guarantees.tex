@@ -48,7 +48,7 @@ quantity depends on a user's report of event-related information.
 
 \begin{lemma}[Objective-agnostic monotonicity]\label{lem:setincl}
 Let $X(\theta_v)$ be the feasible action set of the day-$d$ charging
-problem given $v$'s report, and let $G$ be any cost functional. If
+problem given $v$'s report, and let $G$ be any cost functional (left arbitrary so that the result holds whether or not the day-$d$ cost includes the event and DR terms). If
 $X(\bar\theta_v) \subseteq X(\theta_v)$, then
 $\min_{x \in X(\bar\theta_v)} G(x) \ge \min_{x \in X(\theta_v)} G(x)$.
 \end{lemma}
@@ -75,9 +75,7 @@ required SoC:
 \epsIC{v}{d} \;=\; \bigl(c^{\mathrm{next}}_{v} -
 \cmarg{v}\bigr)^{+}\, \banked{v}{k},
 \]
-where $c^{\mathrm{next}}_{v}$ is the realized next-session marginal
-cost. If forecasts are exact, the mechanism is exactly periodic
-ex-post IC; if additionally $v$ has a single session, the statement
+where $c^{\mathrm{next}}_{v}$ is the \emph{realized} next-session marginal cost and $\cmarg{v}$ is its \emph{forecast} \eqref{eq:pbank}, so $\epsIC{v}{d}$ is the (positive part of the) forecast error in the next-session price, scaled by the banked excess $\banked{v}{k}$. This $\epsIC{v}{d}$ is unrelated to the delivery risk level $\varepsilon$ of Section~\ref{sec:formulation}; it is a per-user, per-day bound, not an operator tolerance. If forecasts are exact ($\cmarg{v} = c^{\mathrm{next}}_{v}$), $\epsIC{v}{d} = 0$ and the mechanism is exactly periodic ex-post IC; if additionally $v$ has a single session, the statement
 reduces to CONSENT's Theorem~1.
 \end{theorem}
 
