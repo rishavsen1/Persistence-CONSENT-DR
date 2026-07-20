@@ -1,0 +1,64 @@
+\section{Experiment Plan}\label{sec:expplan}
+
+Data: operational building load and charging telemetry from a commercial
+site (May~2023--Nov.~2024), utility TOU tariffs, CBP rates
+($\winc{=}\$13.6$/kW, $\Kfsl{=}\$6$/kWh). 50 test episodes/month over 8
+months, $\geq 5$ seeds, paired bootstrap CIs on all headline deltas,
+common random numbers across counterfactuals, config-hash provenance on
+every result.
+
+\paragraph{Claims and their experiments.}
+\begin{itemize}
+\item \textbf{C1 (headline):} the full system earns net DR revenue at
+equal or better user cost than the best non-committing baseline.
+\emph{Main table} over a baseline ladder: building-only; uncoordinated;
+smart charging; single-day negotiation (CONSENT); persistence banking
+without negotiation (P-V2B); negotiation with naive bolt-on DR;
+operator-controlled banking with DR but no mechanism; \textbf{P-CONSENT};
+perfect-information oracle. Metrics: net building cost, DR revenue and
+penalty, user \$/kWh, reject rate, FSL delivery rate, missing SoC,
+battery throughput.
+\item \textbf{C2 (causality):} banking causally expands the safely
+committable FSL. Sweep the banking reward $\Kbank{v}$ (not the buffer by
+fiat, so the causal path runs through dispatch); report
+$\min\Omeps$, realized FSL, revenue; report any monotonicity violations
+at charger-capacity kinks honestly.
+\item \textbf{C3 (commitment):} the $(\lambda,\varepsilon)$ frontier and
+the regime boundary. Frontier sweep $\lambda \times \varepsilon$
+(revenue, penalty, delivery rate); \emph{regime sweep of $\winc$} across
+the boundary where $\lambda^{\star}$ moves from interior to clamped;
+verify the unconstrained newsvendor condition
+$\mathbb{E}[\Nexc(\FSL^{\star})] = \winc/(\Kfsl\dt)$ on the value curve.
+\item \textbf{C4 (incentives):} empirical $\varepsilon$-IC. Deviation
+harness over all users and episodes (earlier departures, inflated SoC);
+violation CDF against the bound, split event vs.\ non-event days; the
+free-riding exploit shown profitable with the banking price disabled and
+closed with it enabled.
+\item \textbf{C5 (ledger):} per-day budget feasibility audit including
+the replay caps; a constructed complementary-buffer day showing the cap
+binding.
+\item \textbf{C6 (decomposition):} certainty-equivalence gap of the
+target-coupled per-day solution vs.\ a joint two-day solve on
+downsampled instances; gap $\to$ 0 under a degenerate forecast.
+\item \textbf{C7 (robustness):} value vs.\ yield $\rho$ and acceptance
+$o$ (heatmap with break-even contour); forecast-degradation sweep;
+scenario-count sensitivity.
+\item \textbf{C8 (guardrail):} realized monthly peaks with commitments
+above vs.\ (forced) below $\Fsafe$; zero new-peak events above it.
+\end{itemize}
+
+\paragraph{Ablations.} One row per removed component: banking price off
+(exploit turns profitable), terminal target off ($K^{\mathrm{bank}}{=}  0$,
+banking degenerates to tie-breaking), replay settlement replaced by
+ex-ante incentive share (funding overdraw reappears), peak-share $\Udc$
+off (non-event peak value unpaid), reject-all off, guardrail off. Each
+row: building cost, user cost, penalty, delivery rate, exploit
+profitability.
+
+\paragraph{Deliverables.} Three main tables (results ladder; sensitivity
+across user-flexibility profiles and cost-share $\alpha$; ablations) and
+five main figures (architecture; $(\lambda,\varepsilon)$ frontier with
+the regime boundary; $(\rho,o)$ heatmap; $\varepsilon$-IC violation CDF
+vs.\ bound; runtime scaling), remainder to appendix. Priority under
+deadline pressure: main table, frontier + regime sweep, heatmap,
+$\varepsilon$-IC, ablations first; all else second.

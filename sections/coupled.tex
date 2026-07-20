@@ -139,7 +139,10 @@ payment and the banking settlement enter with negative signs (revenue),
 the violation penalty and the user payments with positive signs (cost);
 the payments $\alpha\Uflex+\Ubuf+\Udc$ and the settlement $\pbank{v}{k}\banked{v}{k}$
 are transfers between building and users and are part of the objective
-by construction.
+by construction. The terminal banking reward $\Kbank{v}\,\bshort{v}$ of
+\eqref{eq:chobj} deliberately does not appear in $J$: it is a shaping
+term internal to $\pich$, steering dispatch toward the commitment
+layer's target, not a monetary flow.
 
 \paragraph{Who pays what.} Tables~\ref{tab:bldgcost} and~\ref{tab:usercost}
 name every term of the net cost by the party that bears it, the rate that

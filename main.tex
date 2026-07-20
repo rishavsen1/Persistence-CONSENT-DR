@@ -6,7 +6,6 @@
 \usepackage{courier}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning}
-\usepackage{courier}
 \frenchspacing
 
 \usepackage{amsthm}
@@ -22,7 +21,6 @@
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e} 
 \usepackage{xcolor}
 \usepackage{comment}
-\usepackage{tikz}
 \usetikzlibrary{positioning, fit, backgrounds}
 % Do NOT use geometry with aaai two-column style.
 % \usepackage[margin=1in]{geometry}
@@ -46,7 +44,7 @@
 /Author ()
 }
 
-\setcounter{secnumdepth}{0}
+\setcounter{secnumdepth}{2}
 
 % ===================================================================
 % Notation macros: change once, propagate everywhere.
@@ -148,7 +146,7 @@
 \newcommand{\qdis}[2]{q_{#1}^{#2}}           % discharged energy
 \newcommand{\act}[1]{A_{#1}}                 % charging action
  
-\title{P-CONSENT}
+\title{P-CONSENT: Committed Demand Response Backed by a Persistent, Negotiated Electric-Vehicle Fleet}
 
 \author{}
 \date{}
@@ -166,6 +164,9 @@
 \input{sections/coupled}
 \input{sections/guarantees}
 \input{sections/approach}
+\input{sections/behavior}
+\input{sections/exp_plan}
+\input{sections/evaluation}
 
 \bibliographystyle{aaai}
 \bibliography{references} 

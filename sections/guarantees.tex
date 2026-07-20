@@ -131,7 +131,7 @@ The guarantee is deliberately weaker than dominant-strategy: once
 private information evolves across sessions, periodic ex-post IC up to
 a model-error term is the strongest notion attainable without full
 dynamic-mechanism machinery, and $\epsIC{v}{d}$ is empirically
-reportable from the forecast diagnostics of Section~6.
+reportable from the forecast diagnostics of Section~\ref{sec:eval}.
 \end{remark}
 
 \subsection{Budget feasibility and participation}
@@ -239,7 +239,7 @@ window.
 The value function of the mixed-integer delivery problem is not convex
 in $\FSL$ in general; Proposition~\ref{prop:newsvendor} is stated for
 the LP relaxation, and convexity of the integer value over the
-operating range of $\FSL$ is verified numerically in Section~7. The
+operating range of $\FSL$ is verified numerically in Section~\ref{sec:eval}. The
 depth $\lambda^{\star}$ implied by $\FSL^{\star}$ through
 \eqref{eq:pledgedepth} anchors the deployed pair
 $(\lambda, \varepsilon)$: operating at $\lambda < \lambda^{\star}$ is
@@ -283,6 +283,24 @@ the expected capacity gain of Proposition~\ref{prop:newsvendor} must
 be weighed against a certain demand-charge increment, a one-line
 comparison once both are computed.
 
+\begin{proof}[Proof of Proposition~\ref{prop:monotone}]
+For any fixed scenario drawn from $\psihat$, additional dischargeable
+energy can only relax the delivery constraint $\Ptot{t} \le \FSL$ on
+$\evwin{d}$: the controller retains every feasible charging plan it had
+with the smaller buffer $\buffhat{d}$ and gains new ones, so the
+per-scenario minimum deliverable $\FSL$ is nonincreasing in the buffer.
+Taking the probability over scenarios preserves the inequality, so the
+chance constraint \eqref{eq:pledgeset} at $\buffhat{d}'$ is satisfied
+by a superset of commitments, giving $\Omeps(\buffhat{d}) \subseteq
+\Omeps(\buffhat{d}')$ and $\min\Omeps(\buffhat{d}') \le
+\min\Omeps(\buffhat{d})$. The revenue statement follows from
+\eqref{eq:dr}, decreasing in $\FSL_d$. The argument assumes the extra
+buffer is dischargeable through bidirectional-assigned capacity within
+$\evwin{d}$; buffer stranded on unidirectional chargers does not enter
+$\buff{d}$ by construction \eqref{eq:buffer}, so the monotonicity is
+with respect to the deliverable buffer only.
+\end{proof}
+
 \subsection{Conditional temporal decomposition}
 
 \begin{theorem}[Decomposition within the target-coupled policy
@@ -315,7 +333,7 @@ problem; setting $\etarget{v}$ to its optimal pre-event departure SoC
 and $\Kbank{v}$ large reproduces the unrestricted optimum by
 concatenation, so the gap vanishes. In general the gap is the
 certainty-equivalence loss of freezing the targets a day ahead, which
-Section~7 reports numerically.
+Section~\ref{sec:eval} reports numerically.
 \end{proof}
 
 The theorem scopes precisely what the architecture assumes: the
