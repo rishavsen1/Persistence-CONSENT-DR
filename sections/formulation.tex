@@ -105,7 +105,7 @@ where $\Eneg(v,k) \le \Ereq(v,k)$ is the negotiated floor (Section~\ref{sec:nego
 \end{equation}
 with slack penalized at $\Kfsl$ through \eqref{eq:dr}. On event days the controller may discharge any EV down to $\Emin(v)$, drawing on energy above the floor, provided \eqref{eq:floor} is restored by the negotiated departure; the floor constrains the departure state, not the trajectory.
 
-\paragraph{Over-charging: target pull under a headroom cap.} Banking is
+\paragraph{Over-charging: meeting a target SoC under a headroom cap.} SoC banking is
 governed by two composed rules. The \emph{pull} is a per-session terminal target $\etarget{v}{k}$ (kWh) for the departure SoC, set by the commitment layer from the forecast value of buffer on the following day. This target is the sole quantity through which the day-ahead commitment reaches the real-time controller: it translates a committed FSL into a concrete per-vehicle banking goal, and it is the scalar interface that makes the per-day decomposition of Theorem~\ref{thm:decomp} exact. It is a
 \emph{desired} departure level, distinct from the \emph{realized}
 departure SoC $\Edep(v,k)$ that the controller achieves; the objective
@@ -118,8 +118,8 @@ weighted by $\Kbank{v} = \hat{P}(\mathrm{return}_v)\cdot\muDR$, where
 $\hat{P}(\mathrm{return}_v)$ is the forecast return probability and
 $\muDR$ is the expected event value per kWh of survived buffer,
 obtained as the dual of the event-window delivery requirement in the
-commitment layer's recourse simulation. Only under-banking is
-penalized; over-banking is discouraged by the demand-cost and
+commitment layer's recourse simulation. Only SoC under-banking is
+penalized; SoC over-banking is discouraged by the demand-cost and
 degradation terms. The \emph{push cap} is the headroom rule of P-V2B:
 over-charge power is admitted at step $t$ only while $\Ptot{t}$ remains
 below the estimated peak $\Pmaxhat$ (and below the event cap when one
@@ -281,8 +281,10 @@ the proportional cap.
 
 \paragraph{User cost.} User $v$'s cost for session $k$ is
 \begin{equation}\label{eq:usercost}
+\begin{aligned}
 \ucost{k}{v} \;=\; \sum_{t \in \Tvk} \we{t}\,\gch{t}{v}
-\;-\; \alpha\,\Uflex(\theta_v) \;-\; \Ubuf(v,k) \;-\; \Udc(v,k)
+ \;-\; \alpha\,\Uflex(\theta_v) \;-\; \Ubuf(v,k) \;-\; \Udc(v,k) \\
 \;+\; \pbank{v}{k}\,\banked{v}{k},
+\end{aligned}
 \end{equation}
 where $\alpha \in [0,1]$ is the cost-sharing parameter on the flexibility component, and the buffer component is paid in full; a share parameter on $\Ubuf$ analogous to $\alpha$ is possible but fixed to one here. The banked excess is settled at the banking rate \eqref{eq:pbank}, which is zero on days preceding anticipated events and at most the avoided next-session cost otherwise, so the user is never charged above their outside procurement cost for banked energy. Every term settles on realized quantities; the single forecast entering a user-facing price is $\cmarg{v}$ inside \eqref{eq:pbank}, and it is a forecast of \emph{prices}, not of user $v$'s behavior. The behavioral model mapping options to choice and acceptance probabilities (user types, inconvenience weights, and satisfaction) is presented in Section~\ref{sec:behavior}.

@@ -1,4 +1,4 @@
-\section{The Coupled Problem \& Solution}\label{sec:coupled}
+\section{The Coupled Problem}\label{sec:coupled}
 
 The three sub-problems of Section~\ref{sec:formulation} do not run in
 isolation: a commitment is only deliverable if charging and negotiation
@@ -111,7 +111,7 @@ banking terms are the only user-to-building payments.}
 Term & Dir. & Rate & Trigger \\
 \midrule
 Charging energy & pays bldg. & $\we{t}$ & kWh delivered \\
-Excess banking & pays bldg. & $\pbank{v}{k}$ & banked above floor \\
+Excess SoC banking & pays bldg. & $\pbank{v}{k}$ & banked above floor \\
 Flexibility & credit & $\alpha\Uflex$ & accepted deviation \\
 Buffer & credit & $\Ubuf$ & event-day discharge \\
 Peak-share & credit & $\Udc$ & peak shaved (any day) \\

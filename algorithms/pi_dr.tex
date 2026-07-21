@@ -1,0 +1,31 @@
+\begin{algorithm}[t]
+\caption{$\pineg$: negotiation at arrival, settlement at departure}
+\label{alg:neg}
+\DontPrintSemicolon
+\SetCommentSty{algocmt}
+\KwIn{arrival report (required SoC $\Ereq$, requested departure
+$\treq$); flexibility menu (option set offered to $v$); committed level
+$\FSL_d$; event-value dual $\muDR$; yield estimate $\rhohat_v$; banking
+prices (mean banked-energy price $\bar{w}^e_k$, forecast next-session
+cost $\cmarg{v}$, demand-charge marginal $\DCmarg$); demand-charge rate
+$\wdr{}$; external rate $\wext$; at departure, the realized surviving
+buffer $\survived{v}{k}$}
+\KwOut{accepted option or reject-all; user session cost $\ucost{k}{v}$}
+\textbf{Arrival:}\;
+compute the flexibility value $\Uflex$ for each menu option under
+\eqref{eq:uflex}\;
+form the banking price \eqref{eq:pbank}\;
+\quad $\pbank{v}{k} = [\max(\bar{w}^e_k, \cmarg{v}) + \DCmarg - \muDR\rhohat_v]^+$\;
+present menu $+$ banking price $+$ reject-all at $\wext$\;
+user selects; if reject-all, charge externally at $\wext$ and exit\;
+\textbf{Departure:}\;
+re-solve day $d$ rates-only, with and without $v$'s surviving buffer
+$\survived{v}{k}$\;
+$\Udc(v,k) \leftarrow \wdr{}\,(\pmaxre(\!\setminus\!v) - \pmaxre)^+$\;
+\quad\tcp*[h]{demand-charge share of the replay}\;
+$\Ubuf(v,k) \leftarrow [\text{replay difference}] - \Udc(v,k)$\;
+\quad\tcp*[h]{energy-plus-penalty share}\;
+settle $\ucost{k}{v}$ \eqref{eq:usercost}, credits capped by the joint
+replay saving\;
+\Return selection;
+\end{algorithm}
