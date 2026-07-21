@@ -9,7 +9,7 @@ We consider a single commercial building that manages its own EV charging infras
 \paragraph{Time structure.} The billing cycle consists of days $d \in \Dset$. Each day is discretized into time steps $t \in \Td$ of length $\dt$ (e.g., 15 minutes), and $\Tset = \cup_d \Td$. The demand charge is assessed over designated peak periods $\Tpeak \subseteq \Tset$. Control decisions are taken at the start of each step and held constant for its duration.
 
 \paragraph{Persistent users and sessions.} Let $\Vset$ be the set of EV
-users, each with a consistent identity across the billing cycle. User $v$'s visits are indexed by sessions $k \in \Kv$, with first session $k = 0$; session $k$ spans $[\tarr(v,k), \tdep(v,k)] \subseteq \Tset$, and $\Tvk$ denotes its time steps. Sessions need not occur on consecutive days; the formulation accommodates arbitrary gaps between visits. At plug-in, the arrival time $\tarr(v,k)$ and arrival SoC $\Earr(v,k)$ are observed, and the user reports a required departure SoC $\Ereq(v,k)$ and departure time $\treq(v,k)$. Let $\Vd{d} \subseteq \Vset$ denote the users with a session active on day $d$.
+users, each with a consistent identity across the billing cycle. User $v$'s visits are indexed by sessions $k \in \Kv$, with first session $k = 0$; session $k$ spans $[\tarr(v,k), \tdep(v,k)] \subseteq \Tset$, and $\Tvk$ denotes its time steps. Sessions need not occur on consecutive days; the formulation accommodates arbitrary gaps between visits. At plug-in, the arrival time $\tarr(v,k)$ and arrival SoC $\Earr(v,k)$ are observed, and the user reports a required departure SoC $\Ereq(v,k)$ and departure time $\treq(v,k)$. Let $\Vd{d} \subseteq \Vset$ denote the users with a session active on day $d$. Per-user, per-session quantities are written $X(v,k)$ (and $X(v)$ when they depend on the user alone); within a report or agreement tuple that concerns a single fixed user-session, we drop the arguments and write, for instance, $(\Ereq, \treq)$ for brevity.
 
 \paragraph{Battery state and persistence.} The SoC of EV $v$ at time $t$
 is $\soc{t}{v}$, expressed in energy units (kWh) and bounded by the usable battery window:
@@ -106,13 +106,13 @@ where $\Eneg(v,k) \le \Ereq(v,k)$ is the negotiated floor (Section~\ref{sec:nego
 with slack penalized at $\Kfsl$ through \eqref{eq:dr}. On event days the controller may discharge any EV down to $\Emin(v)$, drawing on energy above the floor, provided \eqref{eq:floor} is restored by the negotiated departure; the floor constrains the departure state, not the trajectory.
 
 \paragraph{Over-charging: target pull under a headroom cap.} Banking is
-governed by two composed rules. The \emph{pull} is a per-session terminal target $\etarget{v}$ (kWh) for the departure SoC, set by the commitment layer from the forecast value of buffer on the following day. This target is the sole quantity through which the day-ahead commitment reaches the real-time controller: it translates a committed FSL into a concrete per-vehicle banking goal, and it is the scalar interface that makes the per-day decomposition of Theorem~\ref{thm:decomp} exact. It is a
+governed by two composed rules. The \emph{pull} is a per-session terminal target $\etarget{v}{k}$ (kWh) for the departure SoC, set by the commitment layer from the forecast value of buffer on the following day. This target is the sole quantity through which the day-ahead commitment reaches the real-time controller: it translates a committed FSL into a concrete per-vehicle banking goal, and it is the scalar interface that makes the per-day decomposition of Theorem~\ref{thm:decomp} exact. It is a
 \emph{desired} departure level, distinct from the \emph{realized}
 departure SoC $\Edep(v,k)$ that the controller achieves; the objective
 receives a one-sided reward on the shortfall of realized below desired,
 \begin{equation}\label{eq:bshort}
-\bshort{v} \;\ge\; \etarget{v} - \Edep(v,k), \qquad \bshort{v} \ge 0,
-\qquad \etarget{v} \le \Emax(v),
+\bshort{v} \;\ge\; \etarget{v}{k} - \Edep(v,k), \qquad \bshort{v} \ge 0,
+\qquad \etarget{v}{k} \le \Emax(v),
 \end{equation}
 weighted by $\Kbank{v} = \hat{P}(\mathrm{return}_v)\cdot\muDR$, where
 $\hat{P}(\mathrm{return}_v)$ is the forecast return probability and

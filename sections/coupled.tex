@@ -65,7 +65,7 @@ $\State_t$ and the private, strategic nature of the users.
 
 \paragraph{Payments and Incentives} Tables~\ref{tab:bldgcost} and~\ref{tab:usercost}
 name every term of the net cost by the party that bears it, the rate that
-governs it, and when it is triggered. The building's ledger (Table~\ref{tab:bldgcost}) sums up to Eq.~ \eqref{eq:J}: grid charges and the
+governs it, and when it is triggered. The building's ledger (Table~\ref{tab:bldgcost}) sums up to Eq.~ \eqref{eq:bellman}: grid charges and the
 violation penalty are costs, the capacity payment and the banking
 settlement are revenue, and the four user-facing terms are the price of
 the flexibility it uses. The user's ledger (Table~\ref{tab:usercost}) is
@@ -79,7 +79,7 @@ buffer (Section~\ref{sec:formulation}).
 
 \begin{table*}[t]
 \centering\tablesize
-\caption{Building ledger: every term of the net cost \eqref{eq:J}, its
+\caption{Building ledger: every term of the net cost \eqref{eq:bellman}, its
 direction, rate, and trigger. Revenue terms carry a negative sign in $J$.}
 \label{tab:bldgcost}
 \begin{tabular}{@{}llll@{}}
@@ -205,7 +205,7 @@ into a single full-horizon optimization
 \Porc:\quad \min_{\{\FSL_d\},\,\{\rate{t}{v}\},\,\{\Eneg,\tdep\},\,\{\text{payments}\}}\ J
 \quad\text{s.t.}\quad \eqref{eq:socbounds}\text{--}\eqref{eq:buffer}
 \end{equation}
-with $J$ exactly as in \eqref{eq:J}. Crucially, the oracle relaxes
+with $J$ exactly as in \eqref{eq:bellman}. Crucially, the oracle relaxes
 information, not autonomy: users remain free agents, so each must still be
 left no worse off than charging externally,
 \begin{equation}\label{eq:ir}
@@ -223,7 +223,7 @@ are known, truthful elicitation is free and strategy-proofness imposes no
 constraint; the planner sets each user's agreed point $(\Eneg,\tdep)$
 directly. The oracle is unattainable in deployment, but $\Porc$ is a valid
 lower bound on the net cost of any policy, and it optimizes the
-\emph{same} objective \eqref{eq:J} as the deployed system, so the two
+\emph{same} objective \eqref{eq:bellman} as the deployed system, so the two
 differ only in information and decomposition, not in what they value.
 
 

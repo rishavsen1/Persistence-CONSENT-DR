@@ -7,7 +7,7 @@ three exchange information at run time. The design principle is that no
 policy solves the joint program: each optimizes its own sub-problem on
 its own clock, and coupling is carried by four quantities passed between
 them, namely the committed level $\FSL_d$ and the terminal targets
-$\etarget{v}$ passed downward from the commitment policy, the
+$\etarget{v}{k}$ passed downward from the commitment policy, the
 event-value dual $\muDR$ passed across from the charging policy to the
 negotiation policy, and the surviving buffer together with the running
 peak carried forward to the next day. Figure~\ref{fig:processflow}
@@ -16,79 +16,88 @@ depicts the three policies and these couplings.
 \subsection{Day-Ahead Commitment ($\pidr$)}\label{sec:approach-dr}
 
 The commitment policy chooses $\FSL_d$ at the end of day $d{-}1$ by
-\emph{trying out its own consequences}: it does not evaluate a
-candidate level in closed form but simulates \emph{delivering on the commitment} on day $d$ (the charging and discharging the building would actually perform to stay under the cap once real arrivals are known, the second-stage recourse in stochastic-programming terms) under that candidate on sampled days drawn from the forecast $\psihat$, then keeps the levels for which delivery meets the risk target $\varepsilon$ (Section~\ref{sec:formulation}). Because the delivery it simulates is exactly the charging policy of
-Section~\ref{sec:approach-ch} run on sampled arrivals, the commitment
-and the delivery on it share one model of the day; the commitment can be
-made before its backing resource exists precisely because that resource
-is simulated in the trial.
+\emph{solving one day-ahead problem and reading off its risk}: it solves a unified oracle, using Sample Average Approximation (SAA) that minimizes expected cost over sampled days drawn from the forecast $\psihat$ (the risk-neutral nomination), then reads the deepest cap it can defend at risk level $\varepsilon$ directly from the distribution of window peaks that this solve produces. The SAA is over the chance constraint \eqref{eq:pledgeset} where the true violation probability is replaced by its empirical frequency over the sampled days. The forecast $\psihat$ already includes the SoC banking and flexibility the building anticipates, enabling the nomination to reflect the resources it expects to have; the negotiation of Section~\ref{sec:approach-neg} then realizes that flexibility on the day and settles it as revenue and user savings, but it never revises the committed level. The commitment is therefore firm before any driver is asked anything, which is exactly what the utility pays for.
 
 \begin{algorithm}[t]
-\caption{$\pidr$: day-ahead commitment by simulated delivery}
+\caption{$\pidr$: day-ahead commitment by scenario MILP}
 \label{alg:dr}
 \DontPrintSemicolon
-\KwIn{forecast $\psihat$; delivery risk level $\varepsilon$; commitment
+\SetCommentSty{algocmt}
+\KwIn{forecast $\psihat$ (including anticipated banking and flexibility);
+event window $\evwin{d}$; delivery risk level $\varepsilon$; commitment
 depth $\lambda \in [0,1]$; sample count $N$; baseline peak $\Phist$;
-per-vehicle usable maxima $\{E_{\max}(v)\}$; candidate FSL grid
-$\mathcal{F} \subseteq [\,\underline{F}, \Phist]$}
-\KwOut{committed level $\FSL_d$; terminal SoC targets $\{\etarget{v}\}$}
-set $\etarget{v} \leftarrow E_{\max}(v)$ for all $v$
-\tcp*{uniform target allocator (current implementation)}
+per-vehicle usable maxima $\{E_{\max}(v)\}$}
+\KwOut{committed level $\FSL_d$; terminal SoC targets $\{\etarget{v}{k}\}$}
+set $\etarget{v}{k} \leftarrow E_{\max}(v)$ for every user $v$ and session $k$
+\tcp*{uniform \emph{aspiration}; clipped by the headroom gate in $\pich$}
 Draw $N$ sampled days $\omega_1,\dots,\omega_N \sim \psihat$ (arrivals,
 required SoC, off-site use)\;
-\ForEach{candidate level $F \in \mathcal{F}$}{
-  \ForEach{sampled day $\omega_i$}{
-    simulate delivering on $F$: run $\pich$ (Alg.~\ref{alg:ch}) under
-    cap $F$ with targets $\{\etarget{v}\}$ on sampled day $\omega_i$\;
-    $x_i \leftarrow \mathbb{1}[\exists\, t \in \evwin{d}:\ \Ptot{t} > F]$
-    \tcp*{joint window exceedance}
-  }
-  $\hat{p}(F) \leftarrow \tfrac{1}{N}\sum_i x_i$
-  \tcp*{estimated violation probability}
-}
-$\Omeps \leftarrow \{F \in \mathcal{F} : \hat{p}(F) \le \varepsilon\}$
-\tcp*{$\varepsilon$-feasible commitment set}
+solve the day-ahead scenario MILP once over $\omega_1,\dots,\omega_N$,
+minimizing expected cost \tcp*{risk-neutral nomination}
+\lFor{each $\omega_i$}{$m_i \leftarrow \max_{t \in \evwin{d}} \Ptot{t}$
+\tcp*[f]{window peak realized by that solve}}
+$\min\Omeps \leftarrow$ the $(1-\varepsilon)$ empirical quantile of
+$\{m_1,\dots,m_N\}$ \tcp*{deepest cap held on $\ge 1-\varepsilon$ of days}
 $\FSL_d \leftarrow \Phist - \lambda\,\bigl(\Phist - \min \Omeps\bigr)$
 \tcp*{commitment-depth interpolation}
-\Return $\FSL_d,\ \{\etarget{v}\}$\;
+\Return $\FSL_d,\ \{\etarget{v}{k}\}$\;
 \end{algorithm}
 
-The exceedance event in Algorithm~\ref{alg:dr} is evaluated
-\emph{jointly} over the window, as the probability that any within-window
-step exceeds $F$, not as a per-step marginal; a level that passes every
-marginal can still fail the joint test, and only the joint test matches
-the delivery guarantee the building sells. The interpolation returns the
-null commitment $\FSL_d = \Phist$ at $\lambda = 0$ and the deepest
-$\varepsilon$-feasible level at $\lambda = 1$, and
-Proposition~\ref{prop:newsvendor} identifies the risk-neutral anchor
-within this family. The terminal targets $\etarget{v}$ set how much buffer the commitment layer asks each user to leave behind. The current implementation uses a uniform allocator, $\etarget{v} = E_{\max}(v)$, asking every vehicle to bank to its usable maximum; this is the most aggressive admissible target and is deliberately simple. A refinement that distributes only the buffer the commitment actually requires, in proportion to each user's forecast availability across the sampled days in which delivery succeeded, would reduce unnecessary banking without changing the interface to $\pich$; we treat it as future work and report results under the uniform allocator.
+A cap $F$ is held on sampled day $i$ exactly when that day's window
+peak $m_i = \max_{t\in\evwin{d}} \Ptot{t}$ stays at or below it:
+\begin{equation}\label{eq:xflag}
+\text{day $i$ holds cap $F$}
+\;\Longleftrightarrow\;
+m_i \le F
+\;\Longleftrightarrow\;
+\Ptot{t} \le F \ \text{for every } t \in \evwin{d}.
+\end{equation}
+The commitment is thus evaluated \emph{jointly} over the window: a day
+counts as a failure if it breaches the cap at \emph{any} within-window
+step, not as a per-step average. A level that passes most steps can
+still fail the joint test, and only the joint test matches the delivery
+guarantee the building sells. Taking the $(1-\varepsilon)$ quantile of
+the peaks $\{m_i\}$ therefore returns $\min\Omeps$, the deepest cap held
+on at least a $1-\varepsilon$ fraction of sampled days. Because the peaks
+$m_i$ are read from the risk-neutral solve, which was not itself trying
+to reach deeper caps, $\min\Omeps$ is a \emph{conservative} estimate of
+the deepest deliverable level; a per-candidate delivery pass would only
+lower it, so the reported commitments understate rather than overstate
+what the fleet can hold. The interpolation returns the null commitment
+$\FSL_d = \Phist$ at $\lambda = 0$ and this deepest $\varepsilon$-feasible
+level at $\lambda = 1$, and Proposition~\ref{prop:newsvendor} identifies
+the risk-neutral anchor
+within this family. The terminal targets $\etarget{v}{k}$ set how much buffer the commitment layer \emph{asks} each user to leave behind; they are a soft pull, not a hard requirement. The current implementation uses a uniform aspiration, $\etarget{v}{k} = E_{\max}(v)$, nominally asking every vehicle to bank to its usable maximum. This does \emph{not} mean vehicles are charged to full: the target only biases dispatch, and the banking it induces is admitted by $\pich$ only into headroom below the estimated and running peaks (Section~\ref{sec:approach-ch}) and always within the committed FSL and rate limits. A vehicle therefore reaches $E_{\max}$ only if enough below-peak headroom happens to exist; in general its realized departure SoC is well below the target, and the demand charge and FSL are respected because they gate the pull rather than being overridden by it. The uniform aspiration is deliberately simple and, being maximal, un-prioritized: it does not shape the buffer to the commitment's actual shortfall or choose which vehicles should carry it. A refinement that distributes only the buffer the commitment requires (from $\min\Omeps$), across users in proportion to their forecast availability, would reduce unnecessary banking and its degradation cost without changing the interface to $\pich$; we treat it as future work and report results under the uniform aspiration.
 
 \subsection{Real-Time Charging ($\pich$)}\label{sec:approach-ch}
 
-The charging policy acts every control step under a model-predictive
-loop. At step $t$ it samples continuations of the arrival process,
-solves a mixed-integer program over the remaining horizon with the
-committed $\FSL_d$ fixed, applies the first action, and rolls forward;
-the objective is \eqref{eq:chobj}, combining energy, demand, the
+The charging policy is a Monte Carlo model-predictive controller
+(MC-MPC): it acts every control step under a receding horizon, and
+handles the uncertainty in future arrivals by sampling. At step $t$ it
+draws $K$ sampled continuations of the arrival process from $\psihat$,
+solves a mixed-integer program over the remaining horizon for each (the
+Monte Carlo step) with the committed $\FSL_d$ fixed, applies the first
+action of the resulting plan, and rolls forward; the objective is
+\eqref{eq:chobj}, combining energy, demand, the
 soft-cap penalty, degradation, and the terminal banking reward
-$\Kbank{v}\bshort{v}$ that pulls departures toward $\etarget{v}$.
+$\Kbank{v}\bshort{v}$ that pulls departures toward $\etarget{v}{k}$.
 
 \begin{algorithm}[t]
 \caption{$\pich$: model-predictive charging with banking}
 \label{alg:ch}
 \DontPrintSemicolon
-\KwIn{committed level $\FSL_d$; terminal SoC targets $\{\etarget{v}\}$;
+\SetCommentSty{algocmt}
+\KwIn{committed level $\FSL_d$; terminal SoC targets $\{\etarget{v}{k}\}$;
 forecast $\psihat$; estimated peak (headroom boundary) $\Pmaxhat$;
 running cycle peak $\pmaxpast$; state at $t$ (SoC, load, present EVs)}
 \KwOut{control action at $t$; event-value dual estimate $\muDR$}
 \For{each control step $t$}{
   sample $K$ arrival continuations from $\psihat$\;
-  solve the fixed-$\FSL_d$ MILP \eqref{eq:chobj} over the horizon
-  (CPLEX), with SoC, negotiated-floor \eqref{eq:floor}, rate, and
+  solve the fixed-$\FSL_d$ using oracle from \eqref{eq:chobj} over the horizon, with SoC, negotiated-floor \eqref{eq:floor}, rate, and
   soft-cap \eqref{eq:fslslack} constraints\;
   apply the first-step charge/discharge action\;
   bank excess only where $\Ptot{t} < \min(\Pmaxhat,\, \pmaxpast)$, pulled
-  toward each $\etarget{v}$ \tcp*{headroom-push with target-pull}
+  toward each $\etarget{v}{k}$ \tcp*{headroom-push with target-pull}
   record the dual $\muDR$ of the FSL-delivery requirement\;
 }
 \Return action; $\muDR$\;
@@ -114,21 +123,23 @@ realized quantities through a single replay of the day.
 \caption{$\pineg$: negotiation at arrival, settlement at departure}
 \label{alg:neg}
 \DontPrintSemicolon
+\SetCommentSty{algocmt}
 \KwIn{arrival report (required SoC $\Ereq$, requested departure
 $\treq$); flexibility menu (option set offered to $v$); committed level
 $\FSL_d$; event-value dual $\muDR$; yield estimate $\rhohat_v$; banking
 prices (mean banked-energy price $\bar{w}^e_k$, forecast next-session
-cost $\cmarg{v}$, demand-charge marginal $\DCmarg$); external rate
-$\wext$}
+cost $\cmarg{v}$, demand-charge marginal $\DCmarg$); demand-charge rate
+$\wdr{}$; external rate $\wext$; at departure, the realized surviving
+buffer $\survived{v}{k}$}
 \KwOut{accepted option or reject-all; user session cost $\ucost{k}{v}$}
-\tcc{arrival}
+\textbf{Arrival:}\;
 compute the flexibility value $\Uflex$ for each menu option under
 \eqref{eq:uflex}\;
 form the banking price \eqref{eq:pbank}\;
 \quad $\pbank{v}{k} = [\max(\bar{w}^e_k, \cmarg{v}) + \DCmarg - \muDR\rhohat_v]^+$\;
 present menu $+$ banking price $+$ reject-all at $\wext$\;
 user selects; if reject-all, charge externally at $\wext$ and exit\;
-\tcc{departure}
+\textbf{Departure:}\;
 re-solve day $d$ rates-only, with and without $v$'s surviving buffer
 $\survived{v}{k}$\;
 $\Udc(v,k) \leftarrow \wdr{}\,(\pmaxre(\!\setminus\!v) - \pmaxre)^+$\;
@@ -155,9 +166,9 @@ Lemma~\ref{lem:replaybf} keeps the total within the realized saving.
 \subsection{Coupling and Complexity}\label{sec:approach-coupling}
 
 The four coupling quantities are the entire interface between policies.
-Within a day the dependence is one-way: $\FSL_d$ and $\etarget{v}$
+Within a day the dependence is one-way: $\FSL_d$ and $\etarget{v}{k}$
 constrain and steer $\pich$, whose realized dispatch and dual $\muDR$
-set what $\pineg$ can offer; nothing flows back within the day. Across days only the surviving buffer $\buff{d{+}1}$ and the running peak enter the next commitment. The terminal target $\etarget{v}$ is precisely the per-user scalar of Theorem~\ref{thm:decomp}'s policy class: carrying the commitment down into charging through this one number per user is what makes the per-day decomposition exact.
+set what $\pineg$ can offer; nothing flows back within the day. Across days only the surviving buffer $\buff{d{+}1}$ and the running peak enter the next commitment. The terminal targets $\{\etarget{v}{k}\}$ are precisely the per-user, per-session scalars of Theorem~\ref{thm:decomp}'s policy class: carrying the commitment down into charging through this small set of numbers is what makes the per-day decomposition exact.
 The dominant cost is the model-predictive charging solve: one
 mixed-integer program per control step per sampled continuation, and
 $N$ delivery simulations per candidate level in the day-ahead pass. Both

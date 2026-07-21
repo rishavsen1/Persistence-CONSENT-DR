@@ -131,7 +131,7 @@
 \newcommand{\cmarg}[1]{\hat{c}^{\,\mathrm{next}}_{#1}} % forecast next-session marginal supply cost
 \newcommand{\DCmarg}{\Delta^{\mathrm{DC}}}          % demand-charge marginal of banking
 \newcommand{\muDR}{\mu^{\mathrm{DR}}}               % event-value dual: $ per kWh of survived buffer
-\newcommand{\etarget}[1]{E^{\mathrm{tgt}}_{#1}}     % terminal banking target of user #1 (kWh)
+\newcommand{\etarget}[2]{E^{\mathrm{tgt}}(#1,#2)}     % per-session terminal banking target of user #1, session #2 (kWh)
 \newcommand{\Kbank}[1]{K^{\mathrm{bank}}_{#1}}      % terminal-shortfall reward weight of user #1
 \newcommand{\Udc}{U^{\mathrm{dc}}}                  % demand-charge peak-share incentive
 \newcommand{\pmaxre}{p^{\mathrm{re}}_{\max}}        % realized billing-cycle peak under replay
@@ -145,7 +145,10 @@
 \newcommand{\zund}[2]{z_{#1}^{#2}}           % unmet floor energy
 \newcommand{\qdis}[2]{q_{#1}^{#2}}           % discharged energy
 \newcommand{\act}[1]{A_{#1}}                 % charging action
- 
+\definecolor{algoblue}{RGB}{20,60,150}
+\newcommand{\algocmt}[1]{\footnotesize\textcolor{algoblue}{#1}}
+
+\definecolor{algoblue}{RGB}{20,60,150}
 \title{P-CONSENT: Committed Demand Response Backed by a Persistent, Negotiated Electric-Vehicle Fleet}
 
 \author{}
@@ -163,8 +166,8 @@
 \input{sections/formulation}
 \input{sections/coupled}
 \input{sections/behavior}
-% \input{sections/guarantees}
 \input{sections/approach}
+\input{sections/guarantees}
 \input{sections/exp_plan}
 \input{sections/evaluation}
 

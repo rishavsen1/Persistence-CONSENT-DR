@@ -81,11 +81,11 @@ reduces to CONSENT's Theorem~1.
 
 \begin{proof}
 \emph{Step 1 (report channel).} Reporting
-$\bar{t}_{\mathrm{req}} < \treq$ requires any feasible schedule to set
+$\bar{t}_{\mathrm{req}} < \treq(v,k)$ requires any feasible schedule to set
 $\rate{t}{v} = 0$ after $\bar{t}_{\mathrm{req}}$ and to satisfy the
 floor by $\bar{t}_{\mathrm{req}}$; every such schedule is feasible
 under the true report (Assumption~\ref{as:assign} rules out
-reassignment effects). Reporting $\bar{E}_{\mathrm{req}} > \Ereq$
+reassignment effects). Reporting $\bar{E}_{\mathrm{req}} > \Ereq(v,k)$
 intersects the feasible set with a smaller terminal set
 (Assumption~\ref{as:floor}). In both cases
 $X(\bar\theta_v) \subseteq X(\theta_v)$. The day-$d$ cost, with or
@@ -306,7 +306,7 @@ class]\label{thm:decomp}
 Let $\sigma_d = (\pmaxpast, \{\Earr(v,k_d)\}_{v})$ and let
 $\Pi_{\mathrm{CE}}$ be the class of policies consisting of per-day
 charging and negotiation policies together with the terminal targets
-$\{\etarget{v}\}$ of \eqref{eq:bshort}. Then: (a) $\sigma_d$ is a
+$\{\etarget{v}{k}\}$ of \eqref{eq:bshort}. Then: (a) $\sigma_d$ is a
 sufficient statistic for the past; (b) within $\Pi_{\mathrm{CE}}$, the
 billing-cycle problem separates into per-day problems coupled only
 through $\sigma_d$, the demand charge decomposing as a maximum over
@@ -327,7 +327,7 @@ $d$ only through $\Edep(v, k_{d-1})$, which the terminal reward
 controls; conditional on realized $\sigma_d$, the day-$d$ problem
 shares no decision variable with any other day. (c) With $\psihat$
 exact, the commitment layer's recourse computes the true event-day
-problem; setting $\etarget{v}$ to its optimal pre-event departure SoC
+problem; setting $\etarget{v}{k}$ to its optimal pre-event departure SoC
 and $\Kbank{v}$ large reproduces the unrestricted optimum by
 concatenation, so the gap vanishes. In general the gap is the
 certainty-equivalence loss of freezing the targets a day ahead, which
