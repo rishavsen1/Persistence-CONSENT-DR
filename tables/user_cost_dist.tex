@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering\tablesize
+\caption{User ledger for session $k$: the terms of \eqref{eq:usercost}
+plus the outside option. Credits are building-to-user; the energy and
+banking terms are the only user-to-building payments.}
+\label{tab:usercost}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Term & Dir. & Rate & Trigger \\
+\midrule
+Charging energy & to bldg. & $\we{t}$ & kWh delivered \\
+Flexibility & credit & $\alpha\Uflex$ & accepted deviation \\
+Inconvenience $I^v_k$ & felt & --- & acceptance criteria \eqref{eq:user_satisfaction} \\
+External charging & outside & $\wext$ & reject-all (price floor) \\
+\bottomrule
+\end{tabular}
+\end{table}

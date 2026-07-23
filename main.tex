@@ -5,7 +5,7 @@
 \usepackage{helvet}
 \usepackage{courier}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta, positioning}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
 \frenchspacing
 
 \usepackage{amsthm}
@@ -40,7 +40,7 @@
 \newcommand{\tablesize}{\small}
 
 \pdfinfo{
-/Title (P-CONSENT: Committed Demand Response Backed by a Persistent, Negotiated EV Fleet)
+/Title (P-CONSENT: Committed Demand Response Backed by a Persistent, Negotiated Electric-Vehicle Fleet)
 /Author ()
 }
 
@@ -148,8 +148,7 @@
 \definecolor{algoblue}{RGB}{20,60,150}
 \newcommand{\algocmt}[1]{\footnotesize\textcolor{algoblue}{#1}}
 
-\definecolor{algoblue}{RGB}{20,60,150}
-\title{P-CONSENT: Committed Demand Response Backed by a Persistent, Negotiated Electric-Vehicle Fleet}
+\title{P-CONSENT: Negotiating a Persistent EV Fleet into Day-Ahead Demand-Response Commitments}
 
 \author{}
 \date{}
@@ -165,8 +164,8 @@
 \input{sections/related_work}
 \input{sections/formulation}
 \input{sections/coupled}
-\input{sections/behavior}
 \input{sections/approach}
+\input{sections/behavior}
 \input{sections/guarantees}
 \input{sections/exp_plan}
 \input{sections/evaluation}

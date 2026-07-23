@@ -1,3 +1,34 @@
 \section{Behavioral Model}\label{sec:behavior}
 % User types, inconvenience weights, option-choice and acceptance probabilities. To be written.
-\textcolor{red}{yet to be added. Based on CONSENT paper}
+To quantify user flexibility, we conducted an anonymized stated-preference survey with 28 university participants. Respondents specified their maximum tolerable deviations in departure time and SoC. They also provided the minimum compensation required (their perceived inconvenience cost) to accept specific deviation scenarios in departure $(\Delta t_{\mathrm{dep}})$, and requested SoC $(\Delta e)$.
+
+
+\noindent
+(i)~\textit{Deviation limits for negotiation options:}
+Survey responses (see supplementary material~\cite{sen2026consent}) are used to group users into \(L\) negotiation options, indexed by $l$,  each with calibrated upper bounds on SoC and departure time deviations,  \(\Delta e^{\max}_l\) and \(\Delta t^{\max}_l\). These bounds establish the menu of negotiation options that the system offers. 
+
+\noindent
+(ii)~\textit{User choice and inconvenience cost model:}  
+Each survey respondent \(v\) provides data across $j$ scenarios, each characterized by deviations \(\Delta e^{v}_j\) and \(\Delta t^{v}_{\mathrm{dep}, j}\), along with a self-reported required discount, which we are terming as ``inconvenience'' \(I^{v}_j\). These observations are used to estimate per-respondent inconvenience sensitivities via the linear model, 
+$
+I^{v}_j = w^{v}_1\, \Delta e^{v}_j + w^{v}_2\, \Delta t^{v}_{\mathrm{dep}, j}.
+$
+Thus, for no deviation, $I^v_j=0$.
+To generalize across the population and reduce dimensionality, respondents \(v\) are clustered into \(N\) user types, indexed by \(n\), each characterized by average inconvenience weights \((w^{n}_1, w^{n}_2)\).
+For each user type \(n\), the estimated inconvenience for negotiation option \(l\) is computed as
+$I^{n}_l = w^{n}_1\, \Delta e_{l} + w^{n}_2\, \Delta t_{\mathrm{dep}, l}$
+where \(\Delta e_{l}\) and \(\Delta t_{\mathrm{dep}, l}\) are the SoC and departure-time deviations for option \(l\).
+
+
+User acceptance during negotiation is modeled via a logit-based choice function~\cite{bae2021inducing}. The utility of acceptance for option \(l\) by user type \(n\) for charging cost $\zeta_l$ and given an external charging cost $\bar{E}$, is
+\begin{equation}\label{eq:user_satisfaction}
+% \small
+Y^{n}_l = \Big[ \bar{E} - (\zeta_l + I^{n}_l) \Big]
+\end{equation} 
+The probability that type \(n\) user accepts option \(l\) is
+$
+P^{n}_l = \frac{\exp(Y^{n}_l) + \varepsilon}{\sum_{l=0}^L \exp(Y^{n}_l)},
+$
+with a small noise term, \(\varepsilon\), for numerical stability.
+
+This framework enables the system to estimate acceptance likelihoods personalized by inferred user types and their characteristic inconvenience costs, allowing design and optimization of incentive-aware negotiation menus aligned with user preferences. Summary statistics of the survey and clustering results are in the supplementary material~\cite{sen2026consent}.

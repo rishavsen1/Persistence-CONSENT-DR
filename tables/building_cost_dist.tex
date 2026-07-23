@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering\tablesize
+\caption{Building ledger: every term of the net cost \eqref{eq:bellman}, its
+direction, rate, and trigger. Revenue terms carry a negative sign in $J$.}
+\label{tab:bldgcost}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Term & Dir. & Rate & Trigger \\
+\midrule
+Energy $\Phi^e_t$ & cost & $\we{t}$ & load + EV (kWh)\\
+Demand charge $\Phi^d$ & cost & $\wdr{}\,\pmax$ & billing-cycle peak \\
+FSL penalty $\Cpen{d}$ & cost & $\Kfsl$ & kWh above $\FSL_d$ \\
+Unmet SoC $\zund{k}{v}$ & cost & $\Ksoc$ & departs below $\Eneg$ \\
+Degradation $\qdis{t}{v}$ & cost & $\Kbatt$ & any V2B discharge \\
+Flexibility $\alpha U$ & to user & user-based & accepted deviation \\
+Capacity $\Cinc{d}$ & revenue & $\winc$ & DR event \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,99 @@
+% Timeline of decisions across a pre-event day and an event day, one swimlane
+% per controller. Complements Fig. 1 (dependency map): this figure shows WHEN
+% each policy acts and WHICH decision it takes. Lanes are independent clocks;
+% arrival and control epochs interleave (no fixed order).
+% Requires \usetikzlibrary{arrows.meta, positioning, backgrounds}.
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  lanelab/.style={align=center, anchor=east, font=\scriptsize},
+  evt/.style={font=\tiny\itshape, text=black!65, align=center},
+  arr/.style={-{Latex[length=1.6mm]}, thick},
+  x=1cm, y=1cm
+]
+% day d-1: x in [0,6.4]; overnight: [6.4,8.0]; day d: [8.0,14.4]
+% lanes: DR y=2.5, ch y=1.25, neg y=0
+% ---------- event window band (day d, behind everything) ----------
+\begin{scope}[on background layer]
+\fill[red!8] (11.4,-0.75) rectangle (13.3,3.05);
+\draw[red!40, thin] (11.4,-0.75) rectangle (13.3,3.05);
+\end{scope}
+\node[evt, text=red!60!black] at (12.35,3.25) {event window $\evwin{d}$ (4--5\,h)};
+% ---------- day headers ----------
+\node[font=\scriptsize\bfseries] at (3.2,3.6) {day $d{-}1$ (pre-event)};
+\node[font=\scriptsize\bfseries, text=black!55] at (7.2,3.6) {overnight};
+\node[font=\scriptsize\bfseries] at (9.9,3.6) {day $d$ (event called)};
+\draw[black!30, thin] (0,3.4) -- (6.4,3.4);
+\draw[black!30, thin, dashed] (6.4,3.4) -- (8.0,3.4);
+\draw[black!30, thin] (8.0,3.4) -- (14.4,3.4);
+% ---------- lane baselines ----------
+\draw[blue!35, thick] (0,2.5) -- (6.4,2.5);
+\draw[blue!35, thick, densely dotted] (6.4,2.5) -- (8.0,2.5);
+\draw[blue!35, thick] (8.0,2.5) -- (14.4,2.5);
+\draw[teal!45, thick] (0,1.25) -- (6.4,1.25);
+\draw[teal!45, thick, densely dotted] (6.4,1.25) -- (8.0,1.25);
+\draw[teal!45, thick] (8.0,1.25) -- (14.4,1.25);
+\draw[orange!55, thick] (0,0) -- (6.4,0);
+\draw[orange!55, thick, densely dotted] (6.4,0) -- (8.0,0);
+\draw[orange!55, thick] (8.0,0) -- (14.4,0);
+% ---------- lane labels ----------
+\node[lanelab, text=blue!50!black]  at (-0.25,2.5)
+  {$\pidr$ \\ {\tiny once per day}};
+\node[lanelab, text=teal!50!black]  at (-0.25,1.25)
+  {$\pich$ \\ {\tiny every $\dt$}};
+\node[lanelab, text=orange!60!black] at (-0.25,0)
+  {$\pineg$ \\ {\tiny per arrival,} \\ {\tiny departure}};
+% ---------- pi^DR: start-of-day commitments ----------
+\node[diamond, fill=blue!25, draw=blue!60, inner sep=1.6pt] at (0,2.5) {};
+\node[evt, anchor=south west, text width=3.2cm] at (-0.05,2.64)
+  {commit $\FSL_d$ for day $d$ (Alg.~\ref{alg:dr})};
+\draw[arr, blue!55] (0.15,2.42) -- (0.85,1.40)
+  node[evt, pos=0.75, right=1pt, text width=1.6cm] {targets steer current SoC banking};
+\node[diamond, fill=blue!25, draw=blue!60, inner sep=1.6pt] at (8.0,2.5) {};
+\node[evt, anchor=south west, text width=1.9cm] at (7.95,2.64)
+  {commit $\FSL_{d+1}$};
+\draw[arr, blue!55] (8.6,2.42) -- (8.6,1.40)
+  node[evt, pos=0.45, right=1pt, text width=1.5cm] {$\FSL_d$ in effect for day $d$};
+% ---------- pi^ch: control comb ----------
+\foreach \xx in {0.0,0.32,...,6.4}  \draw[teal!60] (\xx,1.18) -- (\xx,1.32);
+\foreach \xx in {8.0,8.32,...,14.4} \draw[teal!60] (\xx,1.18) -- (\xx,1.32);
+\node[evt, anchor=north, text width=3.6cm] at (3.0,1.11)
+  {Charge excess SoC when ($\Ptot{t}<\Pmaxhat$), pulled to targets (Alg.~\ref{alg:ch})};
+\node[evt, anchor=north, text width=2.2cm] at (12.35,1.11)
+  {discharge buffer; hold $\Ptot{t}\le\FSL_d$};
+% ---------- pi^neg: arrivals and departures ----------
+\foreach \xx in {1.1,1.7,2.4}
+  \draw[arr, orange!75!black] (\xx,0.32) -- (\xx,0.04);
+\foreach \xx in {9.1,9.7,10.4}
+  \draw[arr, orange!75!black] (\xx,0.32) -- (\xx,0.04);
+\foreach \xx in {4.9,5.5,6.1}
+  \draw[arr, orange!75!black] (\xx,-0.04) -- (\xx,-0.32);
+\foreach \xx in {13.5,13.9,14.3}
+  \draw[arr, orange!75!black] (\xx,-0.04) -- (\xx,-0.32);
+\node[evt, anchor=north, text width=3.2cm] at (1.75,-0.42)
+  {arrivals: flexibility menu, banking consent at $\pbank{v}{k}$};
+\node[evt, anchor=north, text width=3.1cm] at (5.5,-0.42)
+  {departures};
+\node[evt, anchor=north, text width=3.0cm] at (13.4,-0.85)
+  {departures $\Ubuf$, $\Udc$};
+% ---------- overnight carryover ----------
+\draw[arr, black!60, densely dashed] (6.5,0.62) -- (7.9,0.62);
+\node[evt, text width=1.7cm] at (7.2,1.12)
+  {Excess SoC carryover};
+\end{tikzpicture}
+\caption{When each decision is taken, and by which controller, across a
+pre-event day and an event day. The commitment policy $\pidr$ acts once per
+day, at the start of the day: at the start of day $d{-}1$ it commits
+$\FSL_d$ for the following day, before any day-$(d{-}1)$ or day-$d$ vehicle
+has arrived, and sets the terminal targets that steer the current day's
+banking. The charging policy $\pich$ acts every control step: on the
+pre-event day it banks excess SoC into headroom, and inside the called
+window it discharges the surviving buffer to hold the committed level. The
+negotiation policy $\pineg$ acts at each arrival (flexibility menu and
+banking consent) and each departure (settlement on realized quantities; on
+event days, the replay shares $\Ubuf$ and $\Udc$). The three rows are
+independent clocks whose epochs interleave; the commitment is fixed a full
+day before the day it governs (Section~\ref{sec:coupled}).}
+\label{fig:timeline}
+\end{figure*}

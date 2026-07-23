@@ -1,23 +1,19 @@
-\section{Approach}\label{sec:approach}
+% \section{Approach}\label{sec:approach}
 
-Section~\ref{sec:formulation} posed three sub-problems and
-Section~\ref{sec:coupled} showed they compose into one semi-Markov
-program. This section describes how each policy is computed and how the
-three exchange information at run time. The design principle is that no
-policy solves the joint program: each optimizes its own sub-problem on
-its own clock, and coupling is carried by four quantities passed between
-them, namely the committed level $\FSL_d$ and the terminal targets
-$\etarget{v}{k}$ passed downward from the commitment policy, the
-event-value dual $\muDR$ passed across from the charging policy to the
-negotiation policy, and the surviving buffer together with the running
-peak carried forward to the next day. Figure~\ref{fig:processflow}
-depicts the three policies and these couplings.
+\input{diagrams/decision_timeline}
+
+% Section~\ref{sec:formulation} posed three sub-problems and Section~\ref{sec:coupled} showed they compose into one semi-Markov program. This section describes how each policy is computed and how the three exchange information at run time. 
+
+
+
+
 
 \subsection{Day-Ahead Commitment ($\pidr$)}\label{sec:approach-dr}
 
-The FSL commitment policy chooses $\FSL_d$ at the start of day $d{-}1$ by
-solving a one-day-ahead problem while evaluating its risk. It solves a single-scenario MILP that minimizes expected cost over sampled days drawn from the forecast $\psihat$, yielding the risk-neutral nomination and, for each sampled day, a realized event-window peak. It then reads the deepest FSL it can defend at risk level $\varepsilon$ as the (1-$\varepsilon$) quantile of those peaks. 
- This is the Sample Average Approximation (SAA) over the chance constraint \eqref{eq:pledgeset}, where the true violation probability is replaced by its empirical frequency over the sampled days. The forecast $\psihat$ already includes the SoC banking and flexibility the building anticipates, enabling the nomination to reflect the resources it expects to have. The negotiation of Section~\ref{sec:approach-neg} then realizes that flexibility on the day and settles it as revenue and user savings, but it never revises the committed level.
+
+
+The FSL commitment policy chooses $\FSL_d$ at the start of day $d{-}n$ by solving a day-ahead problem while evaluating its risk. It solves a MILP that minimizes expected cost over sampled days drawn from the forecast $\psihat$, providing a possible event-window peak. 
+% This is the Sample Average Approximation (SAA) over the sampled future states. where the true violation probability is replaced by its empirical frequency over the sampled days. The forecast $\psihat$ already includes the SoC banking and flexibility the building anticipates, enabling the nomination to reflect the resources it expects to have. The negotiation of Section~\ref{sec:approach-neg} then realizes that flexibility on the day and settles it as revenue and user savings, but it never revises the committed level.
 
 \begin{algorithm}[t]
 \caption{$\pidr$: day-ahead commitment by scenario MILP}
@@ -54,54 +50,43 @@ The terminal targets $\etarget{v}{k}$ set how much buffer the commitment layer \
 
 The charging policy is a Monte Carlo model-predictive controller (MC-MPC): it acts every control step under a receding horizon, and handles the uncertainty in future arrivals by sampling. At step $t$ it draws $K$ samples from $\psihat$, solves a mixed-integer program over the remaining horizon for each with a common first action and the committed $\FSL_d$. The first action at the current time $t$ is applied, and rolls forward. The objective is Eq.~\eqref{eq:chobj}, combining energy, demand, the FSL penalty, degradation, and the end-of-day SoC banking reward $\Kbank{v}\bshort{v}$ that pulls departures toward $\etarget{v}{k}$.
 
-\begin{algorithm}[t]
-\caption{$\pich$: model-predictive charging with banking}
-\label{alg:ch}
-\DontPrintSemicolon
-\SetCommentSty{algocmt}
-\KwIn{committed level $\FSL_d$; terminal SoC targets $\{\etarget{v}{k}\}$;
-forecast $\psihat$; estimated peak (headroom boundary) $\Pmaxhat$;
-running cycle peak $\pmaxpast$; state at $t$ (SoC, load, present EVs)}
-\KwOut{control action at $t$; event-value dual estimate $\muDR$}
-\For{each control step $t$}{
-  sample $K$ arrival continuations from $\psihat$\;
-  solve the fixed-$\FSL_d$ MILP minimizing \eqref{eq:chobj} over the horizon, with SoC, negotiated-floor \eqref{eq:floor}, rate, and
-  soft-cap \eqref{eq:fslslack} constraints\;
-  apply the first-step charge/discharge action\;
-  bank excess only where $\Ptot{t} < \min(\Pmaxhat,\, \pmaxpast)$, pulled
-  toward each $\etarget{v}{k}$ \tcp*{headroom-push with target-pull}
-  record the dual $\muDR$ of the FSL-delivery requirement\;
+
+\begin{algorithm}[tbph]
+\caption{P-V2B Charging Optimization}
+\label{alg:MP-MPC}
+\KwIn{Initial state $S_0$, number of samples $N_f$, billing period $T$, estimated monthly peak power $\hat{P}^{max}$ 
+
 }
-\Return action; $\muDR$\;
+\KwOut{Charging decisions $A_t$}
+
+\For{$t = 0$ \KwTo $\mathcal{T}$}{
+
+    Check EV departures and free assigned chargers\;
+    Assign chargers to new arrivals using FCFS\; 
+    Observe current state $\State_t$\;
+    Future trajectory set $\mathcal{F} \leftarrow \emptyset$\; 
+    \For{$i = 1$ \KwTo $N_f$}{
+       Sample trajectory $f$ from the generative model given $\State_t$, simulate from $t{+}1$ to $t_{eod}$, and add $f$ to $\mathcal{F}$\;
+    }
+    Get $A_t$ by solving optimization in Eq.~(\ref{eq:ns_objective}) 
+    
+    Refine action to $\tilde{A}_t=f_{\text{refine}}(A_t, \hat{P}^{\max})$ by Eq.~(\ref{eq:force_charge})  
+    % Subject to: $A_t$ is shared across all $f$, and feasibility constraints (Section~\ref{sec:constraints})\;
+    
+    Apply $\tilde{A}_t$ and update system state to $\State_{t+1}$\;
+}
+% \vspace{-1mm}
 \end{algorithm}
 
-Two components govern banking. The target-pull, through
-$\Kbank{v}\bshort{v}$, states \emph{how much} buffer the commitment
-layer wants accumulated; the headroom-push cap states \emph{when} accumulating it is admissible, admitting charge above immediate need only into capacity that lies below both the estimated peak $\Pmaxhat$ and the running cycle peak $\pmaxpast$, so banking never creates a new demand-charge peak. When no event is anticipated,
-$\muDR = 0$ and $\Kbank{v} = 0$, and the composition reduces exactly to
-the opportunistic headroom rule of P-V2B, which is the null-commitment
-special case. The dual $\muDR$ on the FSL-delivery requirement is the shadow price of that requirement: the marginal improvement in the building's objective per additional unit of guaranteed deliverable buffer, and hence the value the banking price passes to the user. A banking offer is quoted at arrival, possibly days before an event, so $\muDR$ at quote time cannot come from that day's operation; it is the \emph{expected} shadow price of delivering on the anticipated event, evaluated under $\psihat$. It is zero when no event is anticipated and positive on pre-event days in proportion to the buffer the building forecasts it will need. Being a forecast quantity, $\muDR$ is the single price-forecast entering any user-facing offer, consistent with the incentive analysis of Section~\ref{sec:guarantees}.
+Two components govern SoC banking. The target SoC $\etarget{v}{k}$, through $\Kbank{v}\bshort{v}$, states the size of the buffer and the  estimated peak $\Pmaxhat$ and the running cycle peak $\pmaxpast$ estimated cap $\Pmaxhat$ states when accumulating it is favorable. Hence, banking never creates a new demand-charge peak. When no event is anticipated, $\muDR = 0$ and $\Kbank{v} = 0$, and the composition reduces exactly to the opportunistic headroom rule of P-V2B, which is the null-commitment special case. 
+
+
+% The dual $\muDR$ on the FSL-delivery requirement is the shadow price of that requirement: the marginal improvement in the building's objective per additional unit of guaranteed deliverable buffer, and hence the value the banking price passes to the user. A banking offer is quoted at arrival, possibly days before an event, so $\muDR$ at quote time cannot come from that day's operation; it is the \emph{expected} shadow price of delivering on the anticipated event, evaluated under $\psihat$. It is zero when no event is anticipated and positive on pre-event days in proportion to the buffer the building forecasts it will need. Being a forecast quantity, $\muDR$ is the single price-forecast entering any user-facing offer, consistent with the incentive analysis of Section~\ref{sec:guarantees}.
 
 
 \subsection{Per-Arrival Negotiation and Settlement ($\pineg$)}\label{sec:approach-neg}
 
-The negotiation policy acts at each arrival and each departure. On
-arrival it prices the flexibility menu and the banking option under the
-committed-FSL objective and presents them alongside the reject-all
-outside option; on departure it settles every user-facing term on
-realized quantities through a single replay of the day.
-
-The banking price makes the over-charge free exactly when the building
-values the buffer, through the $\muDR\rhohat_v$ term, and
-arbitrage-neutral otherwise, through the $\max$; the derivation and its
-incentive consequence are in Section~\ref{sec:formulation} and
-Section~\ref{sec:guarantees}. The departure settlement re-solves the
-realized day with rates as the only free variables, so the difference
-between the with-buffer and without-buffer solves is the true marginal
-value of $v$'s buffer; partitioning that one difference into $\Udc$ and
-$\Ubuf$ attributes the demand-charge and the energy-plus-penalty shares
-without paying any step twice, and the proportional cap of
-Lemma~\ref{lem:replaybf} keeps the total within the realized saving.
+The negotiation policy acts at each arrival and each departure. On arrival it prices the flexibility menu and the banking option under the committed-FSL objective and presents them alongside the reject-all outside option; on departure it settles every user-facing term on realized quantities through a single replay of the day.  The banking price makes the over-charge free exactly when the building values the buffer, through the $\muDR\rhohat_v$ term, and arbitrage-neutral otherwise, through the $\max$; the derivation and its incentive consequence are in Section~\ref{sec:formulation} and Section~\ref{sec:guarantees}. The departure settlement re-solves the realized day with rates as the only free variables, so the difference between the with-buffer and without-buffer solves is the true marginal value of $v$'s buffer; partitioning that one difference into $\Udc$ and $\Ubuf$ attributes the demand-charge and the energy-plus-penalty shares without paying any step twice, and the proportional cap of Lemma~\ref{lem:replaybf} keeps the total within the realized saving.
 
 \subsection{Coupling and Complexity}\label{sec:approach-coupling}
 
